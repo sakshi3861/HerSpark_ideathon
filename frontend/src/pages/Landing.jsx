@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import Header from '../components/Header';
 import Footer from '../components/Footer';
 import useTitle from '../hooks/useTitle';
 
@@ -7,7 +8,8 @@ export default function Landing() {
   useTitle('Privacy controls for health apps');
   return (
     <>
-    <main className="w-full bg-background text-on-surface">
+    <Header />
+    <main className="w-full pt-20 bg-background text-on-surface">
       <div className="flex flex-col w-full">
           {/* Section 1: Hero (Restyled matching Image 3) */}
           <section className="relative w-full min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-white via-background to-primary-fixed/60 px-margin py-space-2xl">

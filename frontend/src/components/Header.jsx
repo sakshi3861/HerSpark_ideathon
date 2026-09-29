@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import brandMark from '../assets/brandmark.svg';
 import { useShield, toggleShield } from '../state/shield';
@@ -12,16 +12,31 @@ const links = [
 
 export default function Header({ active }) {
   const shieldOn = useShield();
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-[#0B0E1A]/90 backdrop-blur-xl border-b border-slate-800/80 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+    <header className={`fixed top-0 left-0 right-0 z-50 bg-[#0B0E1A]/90 backdrop-blur-xl border-b border-slate-800/80 shadow-[0_4px_20px_rgba(0,0,0,0.5)] transition-transform duration-300 ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
       <div className="h-20 max-w-[1440px] mx-auto px-margin flex items-center justify-between gap-space-lg">
         <div className="flex items-center gap-space-lg flex-shrink-0">
           <Link to="/home" className="flex items-center gap-3">
-            <img alt="SurakshaShield logo" className="h-8 w-auto object-contain filter brightness-125" src={brandMark} />
-            <span className="flex flex-col">
-              <span className="text-t-card text-white">SurakshaShield</span>
-              <span className="text-t-caption text-cyan-400">Privacy &amp; Security SDK</span>
-            </span>
+            <img alt="SurakshaShield logo" className="h-9 w-auto object-contain rounded-lg shadow-sm" src={brandMark} />
+            <span className="text-xl font-bold text-white tracking-wide">SurakshaShield</span>
           </Link>
           <span className="h-8 w-px bg-slate-800 hidden lg:block" />
           <nav className="hidden md:flex items-center gap-1.5">
