@@ -24,7 +24,7 @@ export default function Landing() {
                 </div>
 
                 <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.05] text-on-surface">
-                  The Protector for <span className="bg-gradient-to-r from-cyan-500 to-indigo-600 bg-clip-text text-transparent">Women's Health Apps</span>
+                  The Protector for <span className="bg-gradient-to-r from-cyan-500 to-indigo-600 bg-clip-text text-transparent">Women's Sensitive Data</span>
                 </h1>
 
                 <p className="mt-space-lg text-xl sm:text-2xl leading-relaxed text-on-surface-variant max-w-2xl">
