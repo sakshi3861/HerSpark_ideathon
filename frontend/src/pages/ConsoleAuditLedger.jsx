@@ -41,7 +41,7 @@ export default function ConsoleAuditLedger() {
                   <div>
                     <h1 className="page-title">Audit Ledger</h1>
                     <p className="page-sub">
-                      SHA-3 hash chain of outbound telemetry events. Verify integrity to check each block against the one before it. Showing sandbox data.
+                      SHA-3 hash chain of outbound telemetry events. Verify integrity to check each block against the one before it.
                     </p>
                   </div>
 

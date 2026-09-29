@@ -31,7 +31,7 @@ export default function SurakshaShieldOverview() {
         <div className="page page-stack">
           <div>
             <h1 className="page-title">Welcome to SurakshaShield</h1>
-            <p className="page-sub">Sandbox workspace · SDK egress controls and audit status</p>
+            <p className="page-sub">SDK egress controls and audit status</p>
           </div>
 
           <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-space-lg">

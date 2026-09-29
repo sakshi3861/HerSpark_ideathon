@@ -87,7 +87,7 @@ export default function ConsoleLiveTraffic() {
             <section className="flex-1 min-w-0 flex flex-col gap-space-xl">
               <div>
                 <h1 className="page-title">Live Traffic</h1>
-                <p className="page-sub">Outbound requests from instrumented SDKs, newest first. Showing sandbox data.</p>
+                <p className="page-sub">Outbound requests from instrumented SDKs, newest first.</p>
               </div>
 
               <div className="card flex flex-col md:flex-row items-center gap-space-md">

@@ -78,7 +78,7 @@ export default function ConsoleOverview() {
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-space-md">
                   <div>
                     <h1 className="page-title">Console Overview</h1>
-                    <p className="page-sub">Requests intercepted in the last 24 hours. Showing sandbox data.</p>
+                    <p className="page-sub">Requests intercepted in the last 24 hours.</p>
                   </div>
                   <span className="inline-flex items-center gap-space-sm text-t-caption text-on-surface-variant sm:mt-space-sm">
                     <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
