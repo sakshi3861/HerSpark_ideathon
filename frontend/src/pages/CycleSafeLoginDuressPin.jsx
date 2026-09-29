@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import Header from '../components/Header';
+import useTitle from '../hooks/useTitle';
 import Footer from '../components/Footer';
 
 export default function CycleSafeLoginDuressPin() {
+  useTitle('CycleSafe Sign in');
   const [pin, setPin] = useState('');
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState(null);
@@ -47,14 +49,14 @@ export default function CycleSafeLoginDuressPin() {
               <div className="w-14 h-14 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-sm mb-space-md">
                 <span className="material-symbols-outlined text-white text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>shield_person</span>
               </div>
-              <h1 className="text-2xl font-bold tracking-tight text-on-surface">CycleSafe Vault</h1>
-              <p className="text-xs text-on-surface-variant mt-space-xs">Enter your security PIN to authenticate</p>
+              <h1 className="text-t-title text-on-surface">CycleSafe Vault</h1>
+              <p className="text-t-body text-on-surface-variant mt-space-xs">Enter your security PIN to authenticate</p>
             </div>
 
             <form className="flex flex-col gap-space-lg" id="vault-auth-form" onSubmit={onSubmit}>
               {/* Identity Field */}
               <div className="flex flex-col gap-space-sm">
-                <label className="text-xs text-on-surface-variant font-medium flex items-center gap-space-xs" htmlFor="vault-email">
+                <label className="text-t-caption text-on-surface-variant flex items-center gap-space-xs" htmlFor="vault-email">
                   <span className="material-symbols-outlined text-secondary text-base">alternate_email</span>
                   Identity Handle
                 </label>
@@ -70,11 +72,11 @@ export default function CycleSafeLoginDuressPin() {
               {/* PIN Display & Preset Buttons */}
               <div className="flex flex-col gap-space-sm">
                 <div className="flex justify-between items-center">
-                  <label className="text-xs text-on-surface-variant font-medium flex items-center gap-space-xs">
+                  <label className="text-t-caption text-on-surface-variant flex items-center gap-space-xs">
                     <span className="material-symbols-outlined text-secondary text-base">pin</span>
                     4-Digit Security PIN
                   </label>
-                  <button className="text-xs text-secondary hover:text-secondary transition-colors" onClick={clearPin} type="button">Clear</button>
+                  <button className="text-t-caption text-secondary hover:text-secondary transition-colors" onClick={clearPin} type="button">Clear</button>
                 </div>
                 <div className="flex items-center justify-between gap-space-md bg-surface-container-low p-space-md rounded-xl border border-outline-variant/40">
                   <div className="flex items-center gap-space-md" id="pin-display">
@@ -83,20 +85,20 @@ export default function CycleSafeLoginDuressPin() {
                     ))}
                   </div>
                   <div className="flex items-center gap-space-sm">
-                    <button className="px-space-md py-space-xs bg-secondary-container/40 text-secondary border border-secondary/30 text-xs font-medium rounded-xl hover:bg-secondary-container transition-colors" onClick={() => presetPin('1234')} type="button">PIN 1234</button>
-                    <button className="px-space-md py-space-xs bg-error-container text-error border border-error/30 text-xs font-medium rounded-xl hover:bg-error-container transition-colors" onClick={() => presetPin('4321')} type="button">Duress 4321</button>
+                    <button className="px-space-md py-space-xs bg-secondary-container/40 text-secondary border border-secondary/30 text-t-button rounded-xl hover:bg-secondary-container transition-colors" onClick={() => presetPin('1234')} type="button">PIN 1234</button>
+                    <button className="px-space-md py-space-xs bg-error-container text-error border border-error/30 text-t-button rounded-xl hover:bg-error-container transition-colors" onClick={() => presetPin('4321')} type="button">Duress 4321</button>
                   </div>
                 </div>
 
                 {/* PIN Pad Grid */}
                 <div className="grid grid-cols-3 gap-space-sm">
                   {['1','2','3','4','5','6','7','8','9'].map(digit => (
-                    <button key={digit} className="h-12 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-semibold text-base border border-outline-variant/40 transition-all active:scale-95" onClick={() => appendPinDigit(digit)} type="button">{digit}</button>
+                    <button key={digit} className="h-12 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface text-t-card border border-outline-variant/40 transition-all active:scale-95" onClick={() => appendPinDigit(digit)} type="button">{digit}</button>
                   ))}
                   <button className="h-12 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface-variant transition-colors flex items-center justify-center" onClick={clearPin} type="button">
                     <span className="material-symbols-outlined text-lg">backspace</span>
                   </button>
-                  <button className="h-12 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-semibold text-base border border-outline-variant/40 transition-all active:scale-95" onClick={() => appendPinDigit('0')} type="button">0</button>
+                  <button className="h-12 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface text-t-card border border-outline-variant/40 transition-all active:scale-95" onClick={() => appendPinDigit('0')} type="button">0</button>
                   <button className="h-12 rounded-xl bg-primary-fixed hover:bg-primary-fixed text-primary-container border border-primary/30 transition-colors flex items-center justify-center" onClick={handleBiometric} title="Quick Biometric" type="button">
                     <span className="material-symbols-outlined text-xl">fingerprint</span>
                   </button>
@@ -105,8 +107,8 @@ export default function CycleSafeLoginDuressPin() {
 
               {/* Demo Hint Text */}
               <div className="rounded-xl bg-surface-container-low border border-outline-variant/40 p-space-md">
-                <p className="text-xs text-on-surface-variant leading-relaxed">
-                  <strong className="text-secondary">Demo Hint:</strong> PIN <span className="font-mono text-on-surface bg-surface-container px-space-sm py-space-xs rounded-lg border border-outline-variant/40">1234</span> normal / Duress <span className="font-mono text-error bg-error-container px-space-sm py-space-xs rounded-lg border border-error/30">4321</span> silent alert.
+                <p className="text-t-body text-on-surface-variant">
+                  <span className="text-secondary">Demo Hint:</span> PIN <span className="font-mono text-t-mono text-on-surface bg-surface-container px-space-sm py-space-xs rounded-lg border border-outline-variant/40">1234</span> normal / Duress <span className="font-mono text-t-mono text-error bg-error-container px-space-sm py-space-xs rounded-lg border border-error/30">4321</span> silent alert.
                 </p>
               </div>
 
@@ -128,8 +130,8 @@ export default function CycleSafeLoginDuressPin() {
                 <div className="flex items-center gap-space-md">
                   <span className="material-symbols-outlined text-xl">{toast.icon}</span>
                   <div className="flex flex-col">
-                    <span className="text-xs font-bold uppercase tracking-wider">{toast.title}</span>
-                    <span className="text-xs mt-space-xs">{toast.body}</span>
+                    <span className="text-t-status uppercase">{toast.title}</span>
+                    <span className="text-t-body mt-space-xs">{toast.body}</span>
                   </div>
                 </div>
               </div>

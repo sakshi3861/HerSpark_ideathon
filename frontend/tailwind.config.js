@@ -115,104 +115,16 @@ export default {
         ]
       },
       "fontSize": {
-        "body-sm": [
-          "0.8125rem",
-          {
-            "lineHeight": "1.25rem",
-            "fontWeight": "400"
-          }
-        ],
-        "label-md": [
-          "0.875rem",
-          {
-            "lineHeight": "1.25rem",
-            "letterSpacing": "-0.01em",
-            "fontWeight": "500"
-          }
-        ],
-        "headline-sm": [
-          "1.25rem",
-          {
-            "lineHeight": "1.75rem",
-            "fontWeight": "600"
-          }
-        ],
-        "headline-lg-mobile": [
-          "1.75rem",
-          {
-            "lineHeight": "2.25rem",
-            "letterSpacing": "-0.015em",
-            "fontWeight": "600"
-          }
-        ],
-        "title-md": [
-          "1.125rem",
-          {
-            "lineHeight": "1.5rem",
-            "fontWeight": "500"
-          }
-        ],
-        "headline-md": [
-          "1.5rem",
-          {
-            "lineHeight": "2rem",
-            "letterSpacing": "-0.01em",
-            "fontWeight": "600"
-          }
-        ],
-        "label-sm": [
-          "0.75rem",
-          {
-            "lineHeight": "1rem",
-            "letterSpacing": "0.02em",
-            "fontWeight": "500"
-          }
-        ],
-        "headline-xl": [
-          "3rem",
-          {
-            "lineHeight": "3.5rem",
-            "letterSpacing": "-0.025em",
-            "fontWeight": "700"
-          }
-        ],
-        "body-lg": [
-          "1.125rem",
-          {
-            "lineHeight": "1.75rem",
-            "fontWeight": "400"
-          }
-        ],
-        "headline-xl-mobile": [
-          "2.25rem",
-          {
-            "lineHeight": "2.75rem",
-            "letterSpacing": "-0.02em",
-            "fontWeight": "700"
-          }
-        ],
-        "headline-lg": [
-          "2.25rem",
-          {
-            "lineHeight": "2.75rem",
-            "letterSpacing": "-0.02em",
-            "fontWeight": "600"
-          }
-        ],
-        "code-block": [
-          "0.8125rem",
-          {
-            "lineHeight": "1.375rem",
-            "fontWeight": "400"
-          }
-        ],
-        "body-md": [
-          "0.9375rem",
-          {
-            "lineHeight": "1.5rem",
-            "fontWeight": "400"
-          }
-        ]
+        // The type scale. Every text element maps to one of these steps.
+        "t-title": ["2rem", { "lineHeight": "2.5rem", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+        "t-section": ["1.25rem", { "lineHeight": "1.75rem", "fontWeight": "600" }],
+        "t-card": ["1rem", { "lineHeight": "1.5rem", "fontWeight": "600" }],
+        "t-body": ["0.875rem", { "lineHeight": "1.375rem", "fontWeight": "400" }],
+        "t-caption": ["0.75rem", { "lineHeight": "1rem", "fontWeight": "400" }],
+        "t-mono": ["0.8125rem", { "lineHeight": "1.25rem", "fontWeight": "400" }],
+        "t-status": ["0.75rem", { "lineHeight": "1rem", "letterSpacing": "0.04em", "fontWeight": "600" }],
+        "t-button": ["0.875rem", { "lineHeight": "1.25rem", "fontWeight": "600" }],
+        "t-nav": ["0.875rem", { "lineHeight": "1.25rem", "fontWeight": "500" }]
       }
     }
   },

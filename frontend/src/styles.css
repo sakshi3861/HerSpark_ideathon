@@ -13,7 +13,7 @@
 
   body {
     overscroll-behavior: none;
-    @apply bg-background font-body-md text-body-md text-on-surface antialiased;
+    @apply bg-background text-t-body text-on-surface antialiased;
   }
 
   main > :first-child {
@@ -49,7 +49,7 @@
     @apply card border border-outline-variant/40;
   }
   .btn {
-    @apply inline-flex items-center justify-center gap-space-sm h-12 px-space-lg rounded-xl text-base font-semibold whitespace-nowrap transition-all active:scale-95 disabled:opacity-70;
+    @apply inline-flex items-center justify-center gap-space-sm h-12 px-space-lg rounded-xl text-t-button whitespace-nowrap transition-all active:scale-95 disabled:opacity-70;
   }
   .btn-primary {
     @apply btn bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white shadow-sm;
@@ -58,13 +58,13 @@
     @apply btn bg-surface-container-lowest hover:bg-surface-container-low text-on-surface border border-outline-variant shadow-sm;
   }
   .field {
-    @apply h-12 px-space-md rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none;
+    @apply h-12 px-space-md rounded-xl bg-surface-container-low text-on-surface text-t-body focus:outline-none;
   }
   .page-title {
-    @apply font-headline-lg text-headline-lg font-semibold text-on-surface tracking-tight;
+    @apply text-t-title text-on-surface;
   }
   .page-sub {
-    @apply font-body-md text-body-md text-on-surface-variant mt-space-xs;
+    @apply text-t-body text-on-surface-variant mt-space-xs;
   }
   .table-cell {
     @apply py-space-md px-space-lg;
@@ -73,4 +73,10 @@
 
 ::-webkit-scrollbar {
   display: none;
+}
+
+@layer components {
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-md hover:-translate-y-0.5;
+  }
 }
