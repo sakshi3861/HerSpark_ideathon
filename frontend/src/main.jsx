@@ -5,6 +5,7 @@ import ConsoleOverview from './pages/ConsoleOverview.jsx';
 import ConsoleLiveTraffic from './pages/ConsoleLiveTraffic.jsx';
 import ConsoleAuditLedger from './pages/ConsoleAuditLedger.jsx';
 import VerifiedRegistry from './pages/VerifiedRegistry.jsx';
+import Landing from './pages/Landing.jsx';
 import SurakshaShieldOverview from './pages/SurakshaShieldOverview.jsx';
 import CycleSafeWelcomeConsent from './pages/CycleSafeWelcomeConsent.jsx';
 import CycleSafeLoginDuressPin from './pages/CycleSafeLoginDuressPin.jsx';
@@ -15,7 +16,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<SurakshaShieldOverview />} />
+        <Route path="/" element={<Landing />} />
+        <Route path="/home" element={<SurakshaShieldOverview />} />
         <Route path="/cyclesafe/welcome" element={<CycleSafeWelcomeConsent />} />
         <Route path="/cyclesafe/login" element={<CycleSafeLoginDuressPin />} />
         <Route path="/cyclesafe/home" element={<CycleSafeHomeDashboard />} />

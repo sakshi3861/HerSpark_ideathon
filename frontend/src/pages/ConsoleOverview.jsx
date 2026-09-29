@@ -1,6 +1,8 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import StatCard from '../components/StatCard';
+import { kpis } from '../data/metrics';
 import ConsoleSidebarNav from '../components/ConsoleSidebarNav';
 
 export default function ConsoleOverview() {
@@ -8,9 +10,9 @@ export default function ConsoleOverview() {
     <>
       <Header active="console_overview" />
       <main className="w-full pt-20 bg-background min-h-screen">
-        <div className="max-w-[1440px] mx-auto px-margin py-space-lg">
+        <div className="page">
           <div className="flex flex-col w-full">
-            <div className="flex flex-col lg:flex-row gap-space-lg w-full">
+            <div className="flex flex-col lg:flex-row items-start gap-space-lg w-full">
               {/* Sidebar */}
               <aside className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-space-lg">
                 <div className="bg-surface-container-lowest p-space-md rounded-2xl shadow-sm flex flex-col gap-space-md">
@@ -28,52 +30,22 @@ export default function ConsoleOverview() {
               <section className="flex-1 min-w-0 flex flex-col gap-space-xl">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md">
                   <div>
-                    <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">Console Overview</h1>
-                    <p className="font-body-md text-body-md text-on-surface-variant mt-0.5">
+                    <h1 className="page-title">Console Overview</h1>
+                    <p className="page-sub">
                       Real-time threat monitoring and privacy score matrix.
                     </p>
                   </div>
                 </div>
 
                 {/* 4 KPI Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-space-md">
-                  <div className="bg-surface-container-lowest p-space-md rounded-2xl shadow-sm flex flex-col justify-between gap-space-md">
-                    <span className="font-body-md text-body-md font-medium text-on-surface-variant">Events Today</span>
-                    <div>
-                      <div className="font-headline-xl text-headline-xl font-bold text-on-surface tracking-tight leading-none">48,210</div>
-                      <div className="font-body-sm text-body-sm text-on-surface-variant mt-space-xs">Outbound SDK calls monitored</div>
-                    </div>
-                  </div>
-
-                  <div className="bg-surface-container-lowest p-space-md rounded-2xl shadow-sm flex flex-col justify-between gap-space-md">
-                    <span className="font-body-md text-body-md font-medium text-on-surface-variant">Leaks Blocked</span>
-                    <div>
-                      <div className="font-headline-xl text-headline-xl font-bold text-error tracking-tight leading-none">5,981</div>
-                      <div className="font-body-sm text-body-sm text-on-surface-variant mt-space-xs">Ad brokers intercepted</div>
-                    </div>
-                  </div>
-
-                  <div className="bg-surface-container-lowest p-space-md rounded-2xl shadow-sm flex flex-col justify-between gap-space-md">
-                    <span className="font-body-md text-body-md font-medium text-on-surface-variant">Data Masked</span>
-                    <div>
-                      <div className="font-headline-xl text-headline-xl font-bold text-tertiary-container tracking-tight leading-none">411</div>
-                      <div className="font-body-sm text-body-sm text-on-surface-variant mt-space-xs">Fuzzed coordinates & tokens</div>
-                    </div>
-                  </div>
-
-                  <div className="bg-surface-container-lowest p-space-md rounded-2xl shadow-sm flex flex-col justify-between gap-space-md">
-                    <span className="font-body-md text-body-md font-medium text-on-surface-variant">Threat Alerts</span>
-                    <div>
-                      <div className="font-headline-xl text-headline-xl font-bold text-primary tracking-tight leading-none">3</div>
-                      <div className="font-body-sm text-body-sm text-on-surface-variant mt-space-xs">Active runtime patterns</div>
-                    </div>
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-space-lg">
+                  {kpis.map(({ key, ...kpi }) => <StatCard key={key} {...kpi} />)}
                 </div>
 
                 {/* 1 Chart + Privacy Score Gauge */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-md">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
                   {/* Line Chart */}
-                  <div className="lg:col-span-8 bg-surface-container-lowest p-space-md rounded-2xl shadow-sm flex flex-col justify-between gap-space-md">
+                  <div className="lg:col-span-8 bg-surface-container-lowest p-space-lg rounded-2xl shadow-sm flex flex-col justify-between gap-space-md">
                     <div>
                       <h2 className="font-title-md text-title-md font-semibold text-on-surface">Events Over 24 Hours</h2>
                       <p className="font-body-sm text-body-sm text-on-surface-variant">Hourly distribution of classified vs. blocked packets</p>
@@ -103,7 +75,7 @@ export default function ConsoleOverview() {
                   </div>
 
                   {/* Privacy Score Gauge */}
-                  <div className="lg:col-span-4 bg-surface-container-lowest p-space-md rounded-2xl shadow-sm flex flex-col justify-between gap-space-md">
+                  <div className="lg:col-span-4 bg-surface-container-lowest p-space-lg rounded-2xl shadow-sm flex flex-col justify-between gap-space-md">
                     <div>
                       <h2 className="font-title-md text-title-md font-semibold text-on-surface">Privacy Score</h2>
                       <span className="font-label-sm text-label-sm text-secondary font-semibold">DPDP Compliant</span>
@@ -126,38 +98,38 @@ export default function ConsoleOverview() {
                 {/* Threat Alerts List (Max 3 Cards) */}
                 <div className="flex flex-col gap-space-md">
                   <h2 className="font-headline-sm text-headline-sm font-semibold text-on-surface">Recent Threat Alerts</h2>
-                  <div className="flex flex-col gap-space-sm">
-                    <div className="bg-surface-container-lowest p-space-md rounded-2xl shadow-sm flex items-start gap-space-md">
-                      <div className="w-10 h-10 rounded-xl bg-error-container text-error flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="flex flex-col gap-space-md">
+                    <div className="bg-surface-container-lowest p-space-lg rounded-2xl shadow-sm flex items-start gap-space-md">
+                      <div className="w-10 h-10 rounded-xl bg-error-container text-error flex items-center justify-center flex-shrink-0 mt-space-xs">
                         <span className="material-symbols-outlined text-[22px]">warning</span>
                       </div>
                       <div>
                         <span className="font-title-md text-title-md font-semibold text-on-surface block">Abnormal bulk export attempt</span>
-                        <p className="font-body-md text-body-md text-on-surface-variant mt-0.5">
+                        <p className="font-body-md text-body-md text-on-surface-variant mt-space-xs">
                           SDK attempted batch sync of 4,000 encrypted period entries.
                         </p>
                       </div>
                     </div>
 
-                    <div className="bg-surface-container-lowest p-space-md rounded-2xl shadow-sm flex items-start gap-space-md">
-                      <div className="w-10 h-10 rounded-xl bg-error text-on-error flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <div className="bg-surface-container-lowest p-space-lg rounded-2xl shadow-sm flex items-start gap-space-md">
+                      <div className="w-10 h-10 rounded-xl bg-error text-on-error flex items-center justify-center flex-shrink-0 mt-space-xs">
                         <span className="material-symbols-outlined text-[22px]">crisis_alert</span>
                       </div>
                       <div>
                         <span className="font-title-md text-title-md font-semibold text-on-surface block">Duress PIN used silently</span>
-                        <p className="font-body-md text-body-md text-on-surface-variant mt-0.5">
+                        <p className="font-body-md text-body-md text-on-surface-variant mt-space-xs">
                           Decoy logs served; silent panic beacon transmitted.
                         </p>
                       </div>
                     </div>
 
-                    <div className="bg-surface-container-lowest p-space-md rounded-2xl shadow-sm flex items-start gap-space-md">
-                      <div className="w-10 h-10 rounded-xl bg-surface-container-highest text-on-surface flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <div className="bg-surface-container-lowest p-space-lg rounded-2xl shadow-sm flex items-start gap-space-md">
+                      <div className="w-10 h-10 rounded-xl bg-surface-container-highest text-on-surface flex items-center justify-center flex-shrink-0 mt-space-xs">
                         <span className="material-symbols-outlined text-[22px]">radar</span>
                       </div>
                       <div>
                         <span className="font-title-md text-title-md font-semibold text-on-surface block">Unknown SDK destination detected</span>
-                        <p className="font-body-md text-body-md text-on-surface-variant mt-0.5">
+                        <p className="font-body-md text-body-md text-on-surface-variant mt-space-xs">
                           Unregistered socket connection blocked at sandbox level.
                         </p>
                       </div>
@@ -169,7 +141,7 @@ export default function ConsoleOverview() {
           </div>
         </div>
       </main>
-      <Footer variant="console" />
+      <Footer />
     </>
   );
 }

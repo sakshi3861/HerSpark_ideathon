@@ -14,7 +14,7 @@ export default function CycleSafeHomeDashboard() {
     <>
       <Header active="cyclesafe_home_dashboard" />
       <main className="w-full pt-20 bg-surface min-h-[calc(100vh-140px)]">
-        <div className="max-w-[1440px] w-full mx-auto px-margin py-space-lg">
+        <div className="page">
           <div className="grid grid-cols-12 gap-gutter">
             {/* Sidebar - Home only */}
             <aside className="col-span-12 lg:col-span-2 flex lg:flex-col gap-space-xs bg-surface-container-lowest rounded-2xl p-space-sm shadow-sm">
@@ -94,7 +94,7 @@ export default function CycleSafeHomeDashboard() {
                   <div className="flex flex-col items-center p-space-xs rounded-xl bg-primary text-on-primary shadow-sm">
                     <span className="font-label-sm text-label-sm opacity-80">Mon</span>
                     <span className="font-headline-sm text-headline-sm font-bold">14</span>
-                    <span className="font-label-sm text-label-sm text-[10px] mt-1">Peak</span>
+                    <span className="font-label-sm text-label-sm text-[10px] mt-space-xs">Peak</span>
                   </div>
                   {['Tue 15', 'Wed 16', 'Thu 17', 'Fri 18', 'Sat 19', 'Sun 20'].map((day, idx) => {
                     const [dName, dNum] = day.split(' ');
@@ -142,34 +142,34 @@ export default function CycleSafeHomeDashboard() {
 
                 {/* Intercept Row List */}
                 <div className="flex flex-col gap-space-sm flex-1 overflow-y-auto">
-                  <div className="p-space-sm rounded-xl bg-surface-container-low flex flex-col gap-1">
+                  <div className="p-space-sm rounded-xl bg-surface-container-low flex flex-col gap-space-xs">
                     <div className="flex items-center justify-between">
                       <span className="font-title-md text-title-md text-on-surface font-semibold">Facebook Graph API</span>
-                      <span className="px-space-xs py-0.5 rounded font-label-sm text-label-sm bg-error-container text-error font-medium">BLOCKED</span>
+                      <span className="px-space-xs py-space-xs rounded font-label-sm text-label-sm bg-error-container text-error font-medium">BLOCKED</span>
                     </div>
                     <span className="font-code-block text-body-sm text-on-surface-variant">LogFertility payload intercepted</span>
                   </div>
 
-                  <div className="p-space-sm rounded-xl bg-surface-container-low flex flex-col gap-1">
+                  <div className="p-space-sm rounded-xl bg-surface-container-low flex flex-col gap-space-xs">
                     <div className="flex items-center justify-between">
                       <span className="font-title-md text-title-md text-on-surface font-semibold">AppsFlyer Attribution</span>
-                      <span className="px-space-xs py-0.5 rounded font-label-sm text-label-sm bg-surface-variant text-on-surface font-medium">MASKED</span>
+                      <span className="px-space-xs py-space-xs rounded font-label-sm text-label-sm bg-surface-variant text-on-surface font-medium">MASKED</span>
                     </div>
                     <span className="font-code-block text-body-sm text-on-surface-variant">GPS fuzzed to coarse H3 cell</span>
                   </div>
 
-                  <div className="p-space-sm rounded-xl bg-surface-container-low flex flex-col gap-1">
+                  <div className="p-space-sm rounded-xl bg-surface-container-low flex flex-col gap-space-xs">
                     <div className="flex items-center justify-between">
                       <span className="font-title-md text-title-md text-on-surface font-semibold">Google Analytics</span>
-                      <span className="px-space-xs py-0.5 rounded font-label-sm text-label-sm bg-secondary-container text-on-secondary-container font-medium">ALLOWED</span>
+                      <span className="px-space-xs py-space-xs rounded font-label-sm text-label-sm bg-secondary-container text-on-secondary-container font-medium">ALLOWED</span>
                     </div>
                     <span className="font-code-block text-body-sm text-on-surface-variant">Sanitized screen_view telemetry</span>
                   </div>
 
-                  <div className="p-space-sm rounded-xl bg-surface-container-low flex flex-col gap-1">
+                  <div className="p-space-sm rounded-xl bg-surface-container-low flex flex-col gap-space-xs">
                     <div className="flex items-center justify-between">
                       <span className="font-title-md text-title-md text-on-surface font-semibold">Own Health Vault Sync</span>
-                      <span className="px-space-xs py-0.5 rounded font-label-sm text-label-sm bg-primary-container text-on-primary font-medium">ENCRYPTED</span>
+                      <span className="px-space-xs py-space-xs rounded font-label-sm text-label-sm bg-primary-container text-on-primary font-medium">ENCRYPTED</span>
                     </div>
                     <span className="font-code-block text-body-sm text-on-surface-variant">ML-KEM-768 ciphertext</span>
                   </div>
@@ -187,7 +187,7 @@ export default function CycleSafeHomeDashboard() {
           </div>
         </div>
       </main>
-      <Footer variant="app" />
+      <Footer />
     </>
   );
 }

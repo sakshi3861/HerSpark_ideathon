@@ -38,27 +38,28 @@ export default function CycleSafeLoginDuressPin() {
   return (
     <>
       <Header active="cyclesafe_login_duress_pin" />
-      <main className="w-full pt-20 bg-surface min-h-[calc(100vh-140px)] flex items-center justify-center py-space-xl">
-        <div className="w-full max-w-md mx-auto px-gutter-mobile md:px-margin">
-          <div className="bg-surface-container-lowest rounded-2xl shadow-xl p-space-lg md:p-space-xl border border-surface-container">
+      <main className="w-full pt-20 bg-background text-on-surface min-h-screen">
+        <div className="page">
+        <div className="w-full max-w-md mx-auto">
+          <div className="card-bordered flex flex-col gap-space-lg">
             {/* Header / Title */}
-            <div className="flex flex-col items-center text-center mb-space-lg">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-primary to-primary-container flex items-center justify-center shadow-md mb-space-xs">
-                <span className="material-symbols-outlined text-secondary-fixed text-[28px]" style={{ fontVariationSettings: "'FILL' 1" }}>shield_person</span>
+            <div className="flex flex-col items-center text-center">
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-sm mb-space-md">
+                <span className="material-symbols-outlined text-white text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>shield_person</span>
               </div>
-              <h1 className="font-headline-md text-headline-md text-on-surface font-bold">CycleSafe Login</h1>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">Enter your PIN to access your account</p>
+              <h1 className="text-2xl font-bold tracking-tight text-on-surface">CycleSafe Vault</h1>
+              <p className="text-xs text-on-surface-variant mt-space-xs">Enter your security PIN to authenticate</p>
             </div>
 
-            <form className="flex flex-col gap-space-md" id="vault-auth-form" onSubmit={onSubmit}>
+            <form className="flex flex-col gap-space-lg" id="vault-auth-form" onSubmit={onSubmit}>
               {/* Identity Field */}
-              <div className="flex flex-col gap-space-xs">
-                <label className="font-label-md text-label-md text-on-surface font-medium flex items-center gap-space-xs" htmlFor="vault-email">
-                  <span className="material-symbols-outlined text-outline text-[18px]">alternate_email</span>
+              <div className="flex flex-col gap-space-sm">
+                <label className="text-xs text-on-surface-variant font-medium flex items-center gap-space-xs" htmlFor="vault-email">
+                  <span className="material-symbols-outlined text-secondary text-base">alternate_email</span>
                   Identity Handle
                 </label>
                 <input
-                  className="w-full bg-surface-container-low text-on-surface font-body-md text-body-md px-space-md py-space-sm rounded-lg focus:outline-none cursor-default shadow-sm"
+                  className="field w-full border border-outline-variant/40 cursor-default"
                   id="vault-email"
                   readOnly
                   type="email"
@@ -67,82 +68,77 @@ export default function CycleSafeLoginDuressPin() {
               </div>
 
               {/* PIN Display & Preset Buttons */}
-              <div className="flex flex-col gap-space-xs">
+              <div className="flex flex-col gap-space-sm">
                 <div className="flex justify-between items-center">
-                  <label className="font-label-md text-label-md text-on-surface font-medium flex items-center gap-space-xs">
-                    <span className="material-symbols-outlined text-outline text-[18px]">pin</span>
+                  <label className="text-xs text-on-surface-variant font-medium flex items-center gap-space-xs">
+                    <span className="material-symbols-outlined text-secondary text-base">pin</span>
                     4-Digit Security PIN
                   </label>
-                  <button className="font-label-sm text-label-sm text-primary hover:text-primary-container transition-colors" onClick={clearPin} type="button">Clear</button>
+                  <button className="text-xs text-secondary hover:text-secondary transition-colors" onClick={clearPin} type="button">Clear</button>
                 </div>
-                <div className="flex items-center justify-between gap-space-sm bg-surface-container-low p-space-md rounded-xl">
-                  <div className="flex items-center gap-space-sm" id="pin-display">
+                <div className="flex items-center justify-between gap-space-md bg-surface-container-low p-space-md rounded-xl border border-outline-variant/40">
+                  <div className="flex items-center gap-space-md" id="pin-display">
                     {Array.from({ length: 4 }, (_, index) => (
-                      <div key={index} className={`pin-dot w-3.5 h-3.5 rounded-full transition-all duration-150 ${index < pin.length ? 'bg-primary scale-110' : 'bg-surface-variant'}`} />
+                      <div key={index} className={`pin-dot w-3.5 h-3.5 rounded-full transition-all duration-150 ${index < pin.length ? 'bg-secondary shadow-sm scale-110' : 'bg-outline-variant'}`} />
                     ))}
                   </div>
-                  <div className="flex items-center gap-space-xs">
-                    <button className="px-space-sm py-1 bg-surface-container text-on-surface font-label-sm text-label-sm rounded hover:bg-surface-variant transition-colors" onClick={() => presetPin('1234')} type="button">PIN 1234</button>
-                    <button className="px-space-sm py-1 bg-error-container text-on-error-container font-label-sm text-label-sm rounded hover:opacity-90 transition-opacity" onClick={() => presetPin('4321')} type="button">Duress 4321</button>
+                  <div className="flex items-center gap-space-sm">
+                    <button className="px-space-md py-space-xs bg-secondary-container/40 text-secondary border border-secondary/30 text-xs font-medium rounded-xl hover:bg-secondary-container transition-colors" onClick={() => presetPin('1234')} type="button">PIN 1234</button>
+                    <button className="px-space-md py-space-xs bg-error-container text-error border border-error/30 text-xs font-medium rounded-xl hover:bg-error-container transition-colors" onClick={() => presetPin('4321')} type="button">Duress 4321</button>
                   </div>
                 </div>
 
                 {/* PIN Pad Grid */}
-                <div className="grid grid-cols-3 gap-space-xs pt-space-xs">
-                  <button className="h-10 rounded-lg bg-surface-container hover:bg-surface-variant font-label-md text-label-md text-on-surface font-medium transition-colors" onClick={() => appendPinDigit('1')} type="button">1</button>
-                  <button className="h-10 rounded-lg bg-surface-container hover:bg-surface-variant font-label-md text-label-md text-on-surface font-medium transition-colors" onClick={() => appendPinDigit('2')} type="button">2</button>
-                  <button className="h-10 rounded-lg bg-surface-container hover:bg-surface-variant font-label-md text-label-md text-on-surface font-medium transition-colors" onClick={() => appendPinDigit('3')} type="button">3</button>
-                  <button className="h-10 rounded-lg bg-surface-container hover:bg-surface-variant font-label-md text-label-md text-on-surface font-medium transition-colors" onClick={() => appendPinDigit('4')} type="button">4</button>
-                  <button className="h-10 rounded-lg bg-surface-container hover:bg-surface-variant font-label-md text-label-md text-on-surface font-medium transition-colors" onClick={() => appendPinDigit('5')} type="button">5</button>
-                  <button className="h-10 rounded-lg bg-surface-container hover:bg-surface-variant font-label-md text-label-md text-on-surface font-medium transition-colors" onClick={() => appendPinDigit('6')} type="button">6</button>
-                  <button className="h-10 rounded-lg bg-surface-container hover:bg-surface-variant font-label-md text-label-md text-on-surface font-medium transition-colors" onClick={() => appendPinDigit('7')} type="button">7</button>
-                  <button className="h-10 rounded-lg bg-surface-container hover:bg-surface-variant font-label-md text-label-md text-on-surface font-medium transition-colors" onClick={() => appendPinDigit('8')} type="button">8</button>
-                  <button className="h-10 rounded-lg bg-surface-container hover:bg-surface-variant font-label-md text-label-md text-on-surface font-medium transition-colors" onClick={() => appendPinDigit('9')} type="button">9</button>
-                  <button className="h-10 rounded-lg bg-surface-container-high hover:bg-surface-variant font-label-sm text-label-sm text-on-surface-variant transition-colors flex items-center justify-center" onClick={clearPin} type="button">
-                    <span className="material-symbols-outlined text-[18px]">backspace</span>
+                <div className="grid grid-cols-3 gap-space-sm">
+                  {['1','2','3','4','5','6','7','8','9'].map(digit => (
+                    <button key={digit} className="h-12 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-semibold text-base border border-outline-variant/40 transition-all active:scale-95" onClick={() => appendPinDigit(digit)} type="button">{digit}</button>
+                  ))}
+                  <button className="h-12 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface-variant transition-colors flex items-center justify-center" onClick={clearPin} type="button">
+                    <span className="material-symbols-outlined text-lg">backspace</span>
                   </button>
-                  <button className="h-10 rounded-lg bg-surface-container hover:bg-surface-variant font-label-md text-label-md text-on-surface font-medium transition-colors" onClick={() => appendPinDigit('0')} type="button">0</button>
-                  <button className="h-10 rounded-lg bg-surface-container-high hover:bg-surface-variant font-label-sm text-label-sm text-secondary transition-colors flex items-center justify-center" onClick={handleBiometric} title="Quick Biometric" type="button">
-                    <span className="material-symbols-outlined text-[20px]">fingerprint</span>
+                  <button className="h-12 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-semibold text-base border border-outline-variant/40 transition-all active:scale-95" onClick={() => appendPinDigit('0')} type="button">0</button>
+                  <button className="h-12 rounded-xl bg-primary-fixed hover:bg-primary-fixed text-primary-container border border-primary/30 transition-colors flex items-center justify-center" onClick={handleBiometric} title="Quick Biometric" type="button">
+                    <span className="material-symbols-outlined text-xl">fingerprint</span>
                   </button>
                 </div>
               </div>
 
               {/* Demo Hint Text */}
-              <div className="rounded-xl bg-surface-container-high p-space-sm">
-                <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
-                  <strong>Demo Hint:</strong> PIN <span className="font-mono font-semibold text-on-surface bg-surface-container px-1 rounded">1234</span> normal / Duress PIN <span className="font-mono font-semibold text-error bg-error-container/60 px-1 rounded">4321</span> engagement.
+              <div className="rounded-xl bg-surface-container-low border border-outline-variant/40 p-space-md">
+                <p className="text-xs text-on-surface-variant leading-relaxed">
+                  <strong className="text-secondary">Demo Hint:</strong> PIN <span className="font-mono text-on-surface bg-surface-container px-space-sm py-space-xs rounded-lg border border-outline-variant/40">1234</span> normal / Duress <span className="font-mono text-error bg-error-container px-space-sm py-space-xs rounded-lg border border-error/30">4321</span> silent alert.
                 </p>
               </div>
 
               {/* Sign In Button */}
               <button
-                className="w-full py-space-md px-space-xl rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md font-semibold flex items-center justify-center gap-space-sm transition-all shadow-md"
+                className="btn-primary w-full"
                 id="auth-submit-btn"
                 type="submit"
                 disabled={busy}
                 data-path="cyclesafe-dashboard"
               >
-                {busy ? <><span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span><span>Verifying...</span></> : <><span>Sign In</span><span className="material-symbols-outlined text-[18px]">arrow_forward</span></>}
+                {busy ? <><span className="material-symbols-outlined animate-spin text-lg">progress_activity</span><span>Verifying...</span></> : <><span>Sign In</span><span className="material-symbols-outlined text-lg">arrow_forward</span></>}
               </button>
             </form>
 
             {/* Toast Notification */}
             {toast && (
-              <div className={`mt-space-md p-space-md rounded-xl transition-all ${toast.mode === 'success' ? 'bg-secondary-container text-on-secondary-container' : toast.mode === 'warning' ? 'bg-surface-container-high text-primary' : 'bg-error-container text-on-error-container'}`} role="status">
-                <div className="flex items-center gap-space-sm">
-                  <span className="material-symbols-outlined text-[20px]">{toast.icon}</span>
+              <div className={`p-space-md rounded-xl border transition-all ${toast.mode === 'success' ? 'bg-secondary-container/40 border-secondary/30 text-secondary' : toast.mode === 'duress' ? 'bg-error-container border-error/30 text-on-error-container' : toast.mode === 'warning' ? 'bg-amber-50 border-amber-400 text-amber-800' : 'bg-error-container border-error/30 text-on-error-container'}`} role="status">
+                <div className="flex items-center gap-space-md">
+                  <span className="material-symbols-outlined text-xl">{toast.icon}</span>
                   <div className="flex flex-col">
-                    <span className="font-label-md text-label-md font-semibold">{toast.title}</span>
-                    <span className="font-body-sm text-body-sm">{toast.body}</span>
+                    <span className="text-xs font-bold uppercase tracking-wider">{toast.title}</span>
+                    <span className="text-xs mt-space-xs">{toast.body}</span>
                   </div>
                 </div>
               </div>
             )}
           </div>
         </div>
+        </div>
       </main>
-      <Footer variant="app" />
+      <Footer />
     </>
   );
 }

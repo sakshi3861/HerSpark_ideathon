@@ -25,6 +25,52 @@
   }
 }
 
+/*
+ * Layout system (8px scale): 8 / 16 / 24 / 32 / 48 / 64
+ *  - page container: max 1440px, 32px side padding, 32px top/bottom, 32px between sections
+ *  - card: 24px padding, 16px radius, one shadow depth
+ *  - grid gutter between cards: 24px
+ *  - buttons and fields: 48px high, 12px radius
+ */
+@layer components {
+  .page {
+    @apply w-full max-w-[1440px] mx-auto px-margin py-space-xl;
+  }
+  .page-stack {
+    @apply flex flex-col gap-space-xl;
+  }
+  .section-py {
+    @apply py-space-2xl;
+  }
+  .card {
+    @apply bg-surface-container-lowest rounded-2xl shadow-sm p-space-lg;
+  }
+  .card-bordered {
+    @apply card border border-outline-variant/40;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-space-sm h-12 px-space-lg rounded-xl text-base font-semibold whitespace-nowrap transition-all active:scale-95 disabled:opacity-70;
+  }
+  .btn-primary {
+    @apply btn bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white shadow-sm;
+  }
+  .btn-secondary {
+    @apply btn bg-surface-container-lowest hover:bg-surface-container-low text-on-surface border border-outline-variant shadow-sm;
+  }
+  .field {
+    @apply h-12 px-space-md rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none;
+  }
+  .page-title {
+    @apply font-headline-lg text-headline-lg font-semibold text-on-surface tracking-tight;
+  }
+  .page-sub {
+    @apply font-body-md text-body-md text-on-surface-variant mt-space-xs;
+  }
+  .table-cell {
+    @apply py-space-md px-space-lg;
+  }
+}
+
 ::-webkit-scrollbar {
   display: none;
 }
