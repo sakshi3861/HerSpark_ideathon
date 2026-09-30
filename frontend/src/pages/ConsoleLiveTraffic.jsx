@@ -8,6 +8,7 @@ import useLoading from '../hooks/useLoading';
 import useNow from '../hooks/useNow';
 import useTitle from '../hooks/useTitle';
 import { useShield } from '../state/shield';
+import { useEvents } from '../state/events';
 import { ago, clock, destinations, makeEvent, payloadFor, seedEvents, statuses } from '../data/traffic';
 
 const PAGE_SIZE = 10;
@@ -28,7 +29,18 @@ export default function ConsoleLiveTraffic() {
   const shieldRef = useRef(shieldOn);
   shieldRef.current = shieldOn;
 
-  const [events, setEvents] = useState(() => seedEvents());
+  const [generated, setEvents] = useState(() => seedEvents());
+  const real = useEvents();
+
+  // Rows from the apps you use in the other tabs sit among the background traffic.
+  const events = useMemo(() => {
+    const status = { shared: 'Encrypted', allowed: 'Allowed', masked: 'Masked', blocked: 'Blocked', leaked: 'Leaked' };
+    const rows = real.filter(e => status[e.action]).map(e => ({
+      id: e.id, ts: e.ts, dest: e.dest, event: e.event, status: status[e.action], latency: 40, retries: 0,
+      bytes: e.bytes || JSON.stringify(e.payload || {}).length, note: e.note, source: e.source, payload: e.payload || {},
+    }));
+    return [...rows, ...generated].sort((a, b) => b.ts - a.ts);
+  }, [real, generated]);
   const [query, setQuery] = useState('');
   const [dest, setDest] = useState('All destinations');
   const [status, setStatus] = useState('All statuses');
@@ -77,7 +89,7 @@ export default function ConsoleLiveTraffic() {
             <aside className="w-full lg:w-64 flex-shrink-0">
               <div className="bg-surface-container-lowest p-space-md rounded-2xl shadow-sm flex flex-col gap-space-md">
                 <div className="flex flex-col px-space-xs">
-                  <span className="text-t-caption text-on-surface-variant tracking-wider uppercase">Console</span>
+                  <span className="text-t-caption text-on-surface-variant tracking-wider uppercase">Live Monitor</span>
                   <span className="text-t-section text-on-surface">Live Traffic</span>
                 </div>
                 <ConsoleSidebarNav active="traffic" variant="traffic" />
@@ -156,6 +168,7 @@ export default function ConsoleLiveTraffic() {
                             <td className="table-cell">
                               <div className={`${e.dest === 'Own Health Vault' ? 'text-primary' : ''}`}>{e.dest}</div>
                               {e.host && <div className="font-mono text-t-mono text-on-surface-variant">{e.host}</div>}
+                              {e.source && <div className="text-t-caption text-primary">from {e.source}</div>}
                               {e.note && <div className="text-t-caption text-on-surface-variant">{e.note}{e.retries ? ` (${e.retries} retries)` : ''}</div>}
                             </td>
                             <td className="table-cell font-mono text-t-mono">{e.event}</td>

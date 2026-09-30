@@ -5,13 +5,13 @@ import { useShield, toggleShield } from '../state/shield';
 
 const links = [
   { label: 'Home', to: '/home', matches: ['surakshashield_overview', 'cyclesafe_home_dashboard'] },
-  { label: 'CycleSafe Demo', to: '/cyclesafe/welcome', matches: ['cyclesafe_welcome_consent', 'cyclesafe_login_duress_pin'] },
-  { label: 'Console', to: '/console', matches: ['console_overview', 'console_live_traffic', 'console_audit_ledger'] },
-  { label: 'Verified Registry', to: '/registry', matches: ['verified_registry'] },
+  { label: 'Live Monitor', to: '/console', matches: ['console_overview', 'console_live_traffic', 'console_audit_ledger'] },
+  { label: 'Trusted Apps', to: '/registry', matches: ['verified_registry'] },
 ];
 
 export default function Header({ active }) {
   const shieldOn = useShield();
+  const showShield = String(active).startsWith('console_');
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
@@ -52,6 +52,7 @@ export default function Header({ active }) {
           </nav>
         </div>
         <div className="flex items-center gap-4 flex-shrink-0">
+          {showShield && (
           <button
             type="button"
             role="switch"
@@ -65,6 +66,7 @@ export default function Header({ active }) {
             </span>
             <span className={`text-t-status uppercase ${shieldOn ? 'text-emerald-300' : 'text-red-300'}`}>{shieldOn ? 'SHIELD ON' : 'SHIELD OFF'}</span>
           </button>
+          )}
           <span className="w-9 h-9 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center flex-shrink-0 text-white shadow-md">
             <span className="material-symbols-outlined text-[18px]">person</span>
           </span>

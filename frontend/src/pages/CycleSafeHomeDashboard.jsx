@@ -1,195 +1,422 @@
-import React, { useState } from 'react';
-import Header from '../components/Header';
-import useTitle from '../hooks/useTitle';
-import Footer from '../components/Footer';
-import ActionCard from '../components/ActionCard';
+import React, { useEffect, useRef, useState } from 'react';
+import brandMark from '../assets/brandmark.svg';
+import SdkRequestModal from '../components/SdkRequestModal';
+import StalkerwareWarning from '../components/StalkerwareWarning';
+import PinLock from '../components/PinLock';
+import DecoyCalendar from '../components/DecoyCalendar';
+import { sha256 } from '../util/sha256';
+import { APP_NAME, STORE_KEY, requests, loadShared, saveShared, isPending, usePending, setPending } from '../data/healthRequest';
+import { addEvent, useEvents } from '../state/events';
+import { getShield, useShield } from '../state/shield';
+import { saveVault, useVault } from '../state/vault';
+import { useBadge } from '../state/badge';
+
+const PINK = '#a53860';
+const BG = '#fbf1f4';
+const LOG_KEY = 'cyclesafe-log';
+const card = 'bg-white rounded-2xl border border-[#a53860]/25 shadow-sm';
+const loadEntries = () => { try { return JSON.parse(localStorage.getItem(LOG_KEY) || '[]'); } catch { return []; } };
+const fmt = iso => new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+const pillTone = {
+  shared: 'text-white', masked: 'text-white', allowed: 'bg-emerald-100 text-emerald-800',
+  blocked: 'bg-gray-100 text-gray-600', leaked: 'bg-red-100 text-red-700',
+};
+const pillText = { shared: 'Shared', masked: 'City only', allowed: 'Sent (anonymous)', blocked: 'Blocked', leaked: 'Leaked' };
 
 export default function CycleSafeHomeDashboard() {
-  useTitle('CycleSafe Home');
-  const [pressedLog, setPressedLog] = useState('');
-  const animateLog = key => {
-    setPressedLog(key);
-    window.setTimeout(() => setPressedLog(current => current === key ? '' : current), 150);
+  const vault = useVault();
+  const badge = useBadge();
+  const shieldOn = useShield();
+  const events = useEvents();
+  const pending = usePending();
+
+  const [session, setSession] = useState('locked'); // locked | real | decoy
+  const [tab, setTab] = useState('home');
+  const [sdkOpen, setSdkOpen] = useState(false);
+  const [shared, setShared] = useState(loadShared);
+  const [logType, setLogType] = useState('period');
+  const [picked, setPicked] = useState([]);
+  const [entries, setEntries] = useState(loadEntries);
+  const [scan, setScan] = useState('idle'); // idle | scanning | found
+  const [confirmWipe, setConfirmWipe] = useState(false);
+  const taps = useRef({ n: 0, t: 0 });
+
+  useEffect(() => { document.title = 'CycleSafe Homescreen'; }, []);
+
+  useEffect(() => {
+    try { localStorage.setItem(LOG_KEY, JSON.stringify(entries)); } catch { /* ignore */ }
+  }, [entries]);
+
+  // First time in: the partner app's request is already waiting.
+  useEffect(() => {
+    if (!loadShared() && !isPending()) setPending(true);
+  }, []);
+
+  // A waiting request opens as soon as CycleSafe is open.
+  useEffect(() => {
+    // Requests wait while the app is locked or showing the harmless calendar.
+    if (!vault.wiped && session === 'real' && pending) setSdkOpen(true);
+    if (session !== 'real') setSdkOpen(false);
+  }, [pending, vault.wiped, session]);
+
+  useEffect(() => {
+    const onStorage = e => { if (e.key === STORE_KEY) setShared(loadShared()); };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  const openLog = type => { setLogType(type); setPicked([]); setTab('log'); };
+  const pick = value => setPicked(cur => logType === 'period' ? [value] : cur.includes(value) ? cur.filter(v => v !== value) : [...cur, value]);
+  const saveEntry = () => {
+    if (!picked.length) return;
+    const entry = { id: Date.now(), type: logType, values: picked, at: new Date().toISOString() };
+    setEntries(cur => [entry, ...cur]);
+    const cipher = sha256(JSON.stringify(entry));
+    addEvent({ source: 'CycleSafe', dest: 'Own Health Vault', event: 'sync_cycle_log', action: 'shared', note: 'Saved encrypted to your own vault', payload: { ciphertext: `ML-KEM-768:${cipher.slice(0, 8)}…`, bytes: 480 + picked.length * 32 } });
+    setPicked([]);
+    setTab('history');
+  };
+  const closeSdk = () => { setSdkOpen(false); setShared(loadShared()); };
+
+  const revoke = () => {
+    const decisions = Object.fromEntries(requests.map(r => [r.key, 'block']));
+    requests.forEach(r => {
+      if (shared?.decisions?.[r.key] && shared.decisions[r.key] !== 'block') {
+        addEvent({ source: 'CycleSafe', dest: APP_NAME, event: `revoke_${r.key}`, action: 'blocked', note: 'You stopped sharing this' });
+      }
+    });
+    const next = { received: {}, decisions, proof: null, at: new Date().toISOString() };
+    saveShared(next);
+    setShared(next);
   };
 
+  // Case 5: a third-party ad SDK inside CycleSafe tries to send the cycle date and the device ID.
+  const runAdSdk = () => {
+    const full = { event: 'app_open', cycle_day: 14, phase: 'Luteal', device_id: '8f3a91bb-4e20-41' };
+    if (getShield()) {
+      addEvent({ source: 'SampleAds SDK', dest: 'ads.sampleads.io', event: 'send_cycle_and_device_id', action: 'blocked', note: 'Cycle date and device ID never left the phone', payload: full });
+      addEvent({ source: 'SampleAds SDK', dest: 'ads.sampleads.io', event: 'app_open_count', action: 'allowed', note: 'Anonymous count only', payload: { app_opens: 1 } });
+    } else {
+      addEvent({ source: 'SampleAds SDK', dest: 'ads.sampleads.io', event: 'send_cycle_and_device_id', action: 'leaked', note: 'Shield was off. Sent unchanged', payload: full });
+    }
+  };
+
+  // Case 8: look for signs of stalkerware.
+  const runScan = () => {
+    setScan('scanning');
+    window.setTimeout(() => {
+      setScan('found');
+      addEvent({ source: 'CycleSafe', dest: 'On this phone', event: 'stalkerware_check', action: 'info', note: 'Warning shown. Nothing was removed automatically' });
+    }, 1500);
+  };
+
+  // Same note for both PINs, so the ledger never shows which vault was opened.
+  const unlock = (mode, fresh) => {
+    addEvent({ source: 'CycleSafe', dest: 'On this phone', event: 'app_unlock', action: 'info', note: 'App opened' });
+    setTab('home');
+    setSession(mode);
+    if (fresh) setPending(true);
+  };
+  const lock = () => { setSession('locked'); setSdkOpen(false); };
+
+  // Hide instead of wipe: show the harmless calendar now, keep the real data safe.
+  const hide = () => {
+    addEvent({ source: 'CycleSafe', dest: 'On this phone', event: 'app_hidden', action: 'info', note: 'App opened' });
+    setSession('decoy');
+  };
+
+  // Case 9: panic. The key is destroyed, so the old data can never be read again.
+  const panic = () => {
+    setConfirmWipe(false);
+    try { localStorage.removeItem(LOG_KEY); localStorage.removeItem(STORE_KEY); } catch { /* ignore */ }
+    setPending(false);
+    setEntries([]);
+    setShared(null);
+    setTab('home');
+    saveVault({ wiped: true, realPin: null, decoyPin: null });
+    addEvent({ source: 'CycleSafe', dest: 'On this phone', event: 'panic_wipe', action: 'info', note: 'Encryption key destroyed. Real data is unreadable' });
+  };
+
+  // Five quick taps on the logo is the secret panic gesture.
+  const logoTap = () => {
+    const now = Date.now();
+    taps.current = { n: now - taps.current.t < 2500 ? taps.current.n + 1 : 1, t: now };
+    if (taps.current.n >= 5) { taps.current = { n: 0, t: 0 }; panic(); }
+  };
+
+  const leaving = events.filter(e => e.action !== 'info').slice(-12).reverse();
+
+  const tabs = [
+    ['home', 'Home', 'home'],
+    ['log', 'Log', 'edit_note'],
+    ['history', 'History', 'history'],
+    ['sharing', 'Sharing', 'share'],
+    ['security', 'Security', 'shield_lock'],
+  ];
+  const logTypes = {
+    period: { label: 'Log Period', icon: 'water_drop', title: 'How is your flow?', options: ['Spotting', 'Light', 'Medium', 'Heavy'] },
+    symptoms: { label: 'Symptoms', icon: 'pulse_alert', title: 'Any symptoms today?', options: ['Cramps', 'Headache', 'Bloating', 'Fatigue', 'Back pain', 'Nausea'] },
+    mood: { label: 'Mood & Energy', icon: 'mood', title: 'How are you feeling?', options: ['Happy', 'Calm', 'Energetic', 'Anxious', 'Irritable', 'Low'] },
+  };
+  const facts = [
+    ['Version', '3.2.0'],
+    ['Category', 'Period & fertility tracker'],
+    ['Data storage', 'Encrypted on device'],
+    ['Data shared with', 'Only companies you approve'],
+  ];
+  const badgeOk = badge.status === 'passed';
+
+  if (!vault.wiped && session === 'locked') return <PinLock onUnlock={unlock} />;
+  if (!vault.wiped && session === 'decoy') return <DecoyCalendar onLock={lock} />;
+
   return (
-    <>
-      <Header active="cyclesafe_home_dashboard" />
-      <main className="w-full pt-20 bg-surface min-h-[calc(100vh-140px)]">
-        <div className="page">
-          <div className="grid grid-cols-12 gap-gutter">
-            {/* Sidebar - Home only */}
-            <aside className="col-span-12 lg:col-span-2 flex lg:flex-col gap-space-xs bg-surface-container-lowest rounded-2xl p-space-sm shadow-sm">
-              <a className="flex items-center gap-space-sm px-space-md py-space-sm rounded-xl bg-primary text-on-primary text-t-nav transition-all shadow-sm" href="#">
-                <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>dashboard</span>
-                <span>Home</span>
-              </a>
-            </aside>
+    <div className="h-screen w-screen flex flex-col md:flex-row overflow-hidden text-[#3a1420]" style={{ background: BG, colorScheme: 'light' }}>
+      {sdkOpen && <SdkRequestModal onClose={closeSdk} />}
+      <aside className="text-white md:w-56 shrink-0 flex md:flex-col gap-2 p-4 md:p-5" style={{ background: PINK }}>
+        <button type="button" onClick={logoTap} className="flex items-center gap-2 md:mb-6 text-left select-none" aria-label="CycleSafe">
+          <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
+          <span className="text-xl font-bold">CycleSafe</span>
+        </button>
+        <a href="/badge/cyclesafe" target="_blank" rel="noopener" className="hidden md:flex flex-col gap-1 self-start px-3 py-1.5 rounded-xl bg-[#0B0E1A] shadow-sm -mt-3 mb-3" title="Check this badge live">
+          <span className="flex items-center gap-2">
+            <img alt="" className="h-6 w-auto rounded-md" src={brandMark} />
+            <span className="text-sm font-bold text-white tracking-wide">SurakshaShield</span>
+          </span>
+          <span className={`text-[10px] font-semibold uppercase tracking-wide ${badgeOk ? 'text-emerald-300' : 'text-red-300'}`}>{badgeOk ? 'Badge active' : 'Badge revoked'}</span>
+        </a>
+        <nav className="flex md:flex-col gap-1 ml-auto md:ml-0 md:flex-1">
+          {tabs.map(([key, label, icon]) => (
+            <button key={key} type="button" onClick={() => setTab(key)} className={`flex items-center gap-2 px-3 py-2 rounded-xl font-medium transition-colors ${tab === key ? 'bg-white text-[#a53860] shadow-sm' : 'hover:bg-white/15'}`}>
+              <span className="material-symbols-outlined text-[20px]">{icon}</span>
+              <span className="hidden sm:inline">{label}</span>
+            </button>
+          ))}
+          {!vault.wiped && (
+            <button type="button" onClick={lock} className="flex items-center gap-2 px-3 py-2 rounded-xl font-medium hover:bg-white/15 md:mt-auto">
+              <span className="material-symbols-outlined text-[20px]">lock</span>
+              <span className="hidden sm:inline">Lock</span>
+            </button>
+          )}
+        </nav>
+      </aside>
 
-            {/* Main Content Area */}
-            <section className="col-span-12 lg:col-span-6 flex flex-col gap-space-lg">
-              {/* Cycle Ring Card */}
-              <div className="bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm flex flex-col md:flex-row items-center gap-space-xl">
-                <div className="relative w-48 h-48 flex items-center justify-center shrink-0">
+      <main className="flex-1 overflow-y-auto p-5 md:p-8">
+        <div className="max-w-5xl mx-auto flex flex-col gap-6">
+          {vault.wiped && (
+            <div className={`${card} p-8 flex flex-col items-center text-center gap-3 max-w-xl mx-auto`}>
+              <span className="material-symbols-outlined text-5xl" style={{ color: PINK }}>key_off</span>
+              <h1 className="text-2xl font-bold">This vault was wiped</h1>
+              <p className="opacity-75">The encryption key was destroyed, so the old data cannot be read by anyone. You can start a new, empty vault.</p>
+              <button type="button" onClick={() => { saveVault({ wiped: false }); setSession('locked'); }} className="h-11 px-5 rounded-xl text-white font-semibold" style={{ background: PINK }}>Start a new vault</button>
+            </div>
+          )}
+
+          {!vault.wiped && tab === 'home' && (
+            <>
+              <div className={`${card} p-6 flex flex-col md:flex-row items-center gap-8`}>
+                <div className="relative w-40 h-40 flex items-center justify-center shrink-0">
                   <svg className="w-full h-full -rotate-90" viewBox="0 0 200 200">
-                    <circle className="text-surface-container" cx="100" cy="100" fill="none" r="82" stroke="currentColor" strokeWidth="14" />
-                    <circle className="opacity-70" cx="100" cy="100" fill="none" r="82" stroke="#ba1a1a" strokeDasharray="92 515" strokeDashoffset="0" strokeLinecap="round" strokeWidth="14" />
-                    <circle cx="100" cy="100" fill="none" r="82" stroke="#006b5f" strokeDasharray="108 515" strokeDashoffset="-160" strokeLinecap="round" strokeWidth="15" />
-                    <circle cx="100" cy="100" fill="none" r="82" stroke="#4338ca" strokeDasharray="257 515" strokeDashoffset="0" strokeLinecap="round" strokeWidth="6" />
+                    <circle cx="100" cy="100" fill="none" r="82" stroke="#f6dde4" strokeWidth="14" />
+                    <circle cx="100" cy="100" fill="none" r="82" stroke={PINK} strokeDasharray="257 515" strokeLinecap="round" strokeWidth="14" />
                   </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-space-sm">
-                    <span className="text-t-caption text-on-surface-variant uppercase tracking-wider">Today</span>
-                    <span className="text-t-title text-primary -my-1">14</span>
-                    <span className="text-t-caption text-secondary">Peak Fertility</span>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                    <span className="text-xs uppercase tracking-wider opacity-60">Sample day</span>
+                    <span className="text-4xl font-bold -my-0.5">14</span>
+                    <span className="text-xs opacity-70">of 28</span>
                   </div>
                 </div>
-
-                <div className="flex flex-col gap-space-sm flex-1 w-full">
-                  <h1 className="text-t-title text-on-surface">Good afternoon, Ananya 👋</h1>
-                  <p className="text-t-body text-on-surface-variant">
-                    Cycle Day 14 of 28 • Luteal Phase • Next period in <span className="text-primary">14 days</span>
-                  </p>
+                <div className="flex flex-col gap-2 flex-1">
+                  <h1 className="text-3xl font-bold">Welcome to CycleSafe</h1>
+                  <p className="opacity-75">Track your cycle, symptoms and mood. Your health data stays on your device, and only the categories you allow can leave it.</p>
                 </div>
               </div>
 
-              {/* 4 Quick Log Tiles */}
               <div>
-                <h2 className="text-t-section text-on-surface mb-space-sm">Quick Log</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-space-sm">
-                  <ActionCard onClick={() => animateLog('period')} pressed={pressedLog === 'period'}>
-                    <div className="w-9 h-9 rounded-xl bg-error-container text-error flex items-center justify-center mb-space-sm">
-                      <span className="material-symbols-outlined text-[20px]">water_drop</span>
-                    </div>
-                    <span className="text-t-card text-on-surface">Log Period</span>
-                  </ActionCard>
-
-                  <ActionCard onClick={() => animateLog('symptoms')} pressed={pressedLog === 'symptoms'}>
-                    <div className="w-9 h-9 rounded-xl bg-surface-container-high text-primary flex items-center justify-center mb-space-sm">
-                      <span className="material-symbols-outlined text-[20px]">pulse_alert</span>
-                    </div>
-                    <span className="text-t-card text-on-surface">Symptoms</span>
-                  </ActionCard>
-
-                  <ActionCard onClick={() => animateLog('mood')} pressed={pressedLog === 'mood'}>
-                    <div className="w-9 h-9 rounded-xl bg-secondary-container text-on-secondary-container flex items-center justify-center mb-space-sm">
-                      <span className="material-symbols-outlined text-[20px]">mood</span>
-                    </div>
-                    <span className="text-t-card text-on-surface">Mood & Energy</span>
-                  </ActionCard>
-
-                  <ActionCard onClick={() => animateLog('intercourse')} pressed={pressedLog === 'intercourse'}>
-                    <div className="w-9 h-9 rounded-xl bg-tertiary-fixed text-tertiary flex items-center justify-center mb-space-sm">
-                      <span className="material-symbols-outlined text-[20px]">favorite</span>
-                    </div>
-                    <span className="text-t-card text-on-surface">Intercourse</span>
-                  </ActionCard>
+                <h2 className="text-lg font-semibold mb-3">Quick Log</h2>
+                <div className="grid grid-cols-3 gap-3">
+                  {Object.entries(logTypes).map(([key, t]) => (
+                    <button key={key} type="button" onClick={() => openLog(key)} className={`${card} p-4 text-left flex flex-col gap-3 hover:brightness-95 transition-all`}>
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white" style={{ background: PINK }}>
+                        <span className="material-symbols-outlined text-[20px]">{t.icon}</span>
+                      </div>
+                      <span className="font-medium">{t.label}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Weekly Calendar Strip */}
-              <div className="bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm flex flex-col gap-space-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-t-section text-on-surface">Weekly Schedule</span>
-                  <span className="text-t-caption text-on-surface-variant">October 2025</span>
+              <div className={`${card} p-6 flex flex-col gap-3`}>
+                <span className="text-lg font-semibold">About this app</span>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {facts.map(([k, v]) => (
+                    <div key={k} className="p-3 rounded-xl border border-[#a53860]/25" style={{ background: BG }}>
+                      <div className="text-xs opacity-60">{k}</div>
+                      <div className="font-medium mt-0.5">{v}</div>
+                    </div>
+                  ))}
                 </div>
-                <div className="grid grid-cols-7 gap-space-xs pt-space-xs">
-                  <div className="flex flex-col items-center p-space-xs rounded-xl bg-primary text-on-primary shadow-sm">
-                    <span className="text-t-caption opacity-80">Mon</span>
-                    <span className="text-t-card">14</span>
-                    <span className="text-t-caption mt-space-xs">Peak</span>
+              </div>
+            </>
+          )}
+
+          {!vault.wiped && tab === 'log' && (
+            <div className={`${card} p-6 flex flex-col gap-5 max-w-2xl`}>
+              <div className="flex gap-2 flex-wrap">
+                {Object.entries(logTypes).map(([key, t]) => (
+                  <button key={key} type="button" onClick={() => { setLogType(key); setPicked([]); }} className={`px-4 py-2 rounded-full font-medium border transition-colors ${logType === key ? 'border-transparent text-white' : 'border-[#a53860]/40 bg-white hover:bg-[#f6dde4]'}`} style={logType === key ? { background: PINK } : undefined}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              <h2 className="text-xl font-semibold">{logTypes[logType].title}</h2>
+              <div className="flex flex-wrap gap-2">
+                {logTypes[logType].options.map(o => (
+                  <button key={o} type="button" onClick={() => pick(o)} className={`px-4 py-2 rounded-xl border font-medium transition-colors ${picked.includes(o) ? 'border-transparent text-white' : 'border-[#a53860]/40 bg-white hover:bg-[#f6dde4]'}`} style={picked.includes(o) ? { background: PINK } : undefined}>
+                    {o}
+                  </button>
+                ))}
+              </div>
+              <button type="button" onClick={saveEntry} disabled={!picked.length} className="h-12 rounded-xl text-white font-semibold shadow-sm transition-all disabled:opacity-40 hover:brightness-95" style={{ background: PINK }}>
+                Save entry
+              </button>
+            </div>
+          )}
+
+          {!vault.wiped && tab === 'history' && (
+            <div className={`${card} p-6 flex flex-col gap-4`}>
+              <div className="flex items-center justify-between">
+                <span className="text-lg font-semibold">History</span>
+                {entries.length > 0 && <button type="button" className="text-sm font-medium underline" onClick={() => setEntries([])}>Clear all</button>}
+              </div>
+              {entries.length === 0 && <p className="opacity-70">Nothing logged yet. Use the Log tab to add your first entry.</p>}
+              {entries.map(e => (
+                <div key={e.id} className="flex items-center gap-3 p-3 rounded-xl border border-[#a53860]/25" style={{ background: BG }}>
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-white" style={{ background: PINK }}>
+                    <span className="material-symbols-outlined text-[20px]">{logTypes[e.type].icon}</span>
                   </div>
-                  {['Tue 15', 'Wed 16', 'Thu 17', 'Fri 18', 'Sat 19', 'Sun 20'].map((day, idx) => {
-                    const [dName, dNum] = day.split(' ');
+                  <div className="flex-1">
+                    <div className="font-medium">{logTypes[e.type].label}: {e.values.join(', ')}</div>
+                    <div className="text-xs opacity-60">{fmt(e.at)}</div>
+                  </div>
+                  <button type="button" aria-label="Delete entry" onClick={() => setEntries(cur => cur.filter(x => x.id !== e.id))}>
+                    <span className="material-symbols-outlined text-[20px] opacity-60 hover:opacity-100">close</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!vault.wiped && tab === 'sharing' && (
+            <div className="flex flex-col gap-4 max-w-3xl">
+              <div>
+                <h1 className="text-2xl font-bold">Who gets your data</h1>
+                <p className="opacity-70 mt-1">Every company that receives information from CycleSafe, and exactly what they get.</p>
+              </div>
+
+              <div className={`${card} p-5 flex flex-col gap-3`}>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white" style={{ background: '#005f73' }}>
+                      <span className="material-symbols-outlined">health_and_safety</span>
+                    </div>
+                    <div>
+                      <div className="font-semibold">{APP_NAME}</div>
+                      <div className="text-xs opacity-60">{shared ? `Updated ${fmt(shared.at)}` : 'No decision yet'}</div>
+                    </div>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${shared && Object.keys(shared.received).length ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'}`}>
+                    {shared && Object.keys(shared.received).length ? 'Sharing' : 'Nothing shared'}
+                  </span>
+                </div>
+                <p className="text-sm opacity-70">Purpose: build a wellness plan and book a gynaecology appointment.</p>
+                <div className="flex flex-col gap-1">
+                  {requests.map(r => {
+                    const d = shared?.decisions?.[r.key] ?? 'block';
                     return (
-                      <div key={idx} className="flex flex-col items-center p-space-xs rounded-xl bg-surface-container-low">
-                        <span className="text-t-caption text-on-surface-variant">{dName}</span>
-                        <span className="text-t-card text-on-surface">{dNum}</span>
+                      <div key={r.key} className="flex items-center justify-between text-sm p-2 rounded-md border border-[#a53860]/20">
+                        <span className="font-medium">{r.label}</span>
+                        <span className={`px-2 py-0.5 rounded uppercase text-[10px] font-bold ${d === 'block' ? 'bg-gray-100 text-gray-600' : 'text-white'}`} style={d === 'block' ? undefined : { background: PINK }}>{d === 'allow' ? 'Shared' : d === 'mask' ? 'City only' : 'Blocked'}</span>
                       </div>
                     );
                   })}
                 </div>
-              </div>
-            </section>
-
-            {/* Live Network Inspector Panel */}
-            <section className="col-span-12 lg:col-span-4 flex flex-col gap-space-md">
-              <div className="bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm flex flex-col h-full">
-                <div className="flex items-center justify-between pb-space-xs">
-                  <div className="flex items-center gap-space-xs">
-                    <span className="material-symbols-outlined text-primary text-[20px]">security</span>
-                    <span className="text-t-section text-on-surface">Live Network Inspector</span>
-                  </div>
-                  <span className="w-2.5 h-2.5 rounded-full bg-secondary animate-ping" />
-                </div>
-
-                {/* Counters */}
-                <div className="grid grid-cols-4 gap-space-xs my-space-sm">
-                  <div className="p-space-xs rounded-xl bg-surface-container-low flex flex-col items-center text-center">
-                    <span className="text-t-caption text-secondary">Leaked</span>
-                    <span className="text-t-card text-secondary">0</span>
-                  </div>
-                  <div className="p-space-xs rounded-xl bg-error-container/30 flex flex-col items-center text-center">
-                    <span className="text-t-caption text-error">Blocked</span>
-                    <span className="text-t-card text-error">14</span>
-                  </div>
-                  <div className="p-space-xs rounded-xl bg-surface-container flex flex-col items-center text-center">
-                    <span className="text-t-caption text-on-surface">Masked</span>
-                    <span className="text-t-card text-tertiary-container">8</span>
-                  </div>
-                  <div className="p-space-xs rounded-xl bg-surface-container-high flex flex-col items-center text-center">
-                    <span className="text-t-caption text-primary">Encrypted</span>
-                    <span className="text-t-card text-primary">22</span>
-                  </div>
-                </div>
-
-                {/* Intercept Row List */}
-                <div className="flex flex-col gap-space-sm flex-1 overflow-y-auto">
-                  <div className="p-space-sm rounded-xl bg-surface-container-low flex flex-col gap-space-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="text-t-card text-on-surface">Facebook Graph API</span>
-                      <span className="px-space-xs py-space-xs rounded text-t-status bg-error-container text-error">BLOCKED</span>
-                    </div>
-                    <span className="font-mono text-t-mono text-on-surface-variant">LogFertility payload intercepted</span>
-                  </div>
-
-                  <div className="p-space-sm rounded-xl bg-surface-container-low flex flex-col gap-space-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="text-t-card text-on-surface">AppsFlyer Attribution</span>
-                      <span className="px-space-xs py-space-xs rounded text-t-status bg-surface-variant text-on-surface">MASKED</span>
-                    </div>
-                    <span className="font-mono text-t-mono text-on-surface-variant">GPS fuzzed to coarse H3 cell</span>
-                  </div>
-
-                  <div className="p-space-sm rounded-xl bg-surface-container-low flex flex-col gap-space-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="text-t-card text-on-surface">Google Analytics</span>
-                      <span className="px-space-xs py-space-xs rounded text-t-status bg-secondary-container text-on-secondary-container">ALLOWED</span>
-                    </div>
-                    <span className="font-mono text-t-mono text-on-surface-variant">Sanitized screen_view telemetry</span>
-                  </div>
-
-                  <div className="p-space-sm rounded-xl bg-surface-container-low flex flex-col gap-space-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="text-t-card text-on-surface">Own Health Vault Sync</span>
-                      <span className="px-space-xs py-space-xs rounded text-t-status bg-primary-container text-on-primary">ENCRYPTED</span>
-                    </div>
-                    <span className="font-mono text-t-mono text-on-surface-variant">ML-KEM-768 ciphertext</span>
-                  </div>
-                </div>
-
-                {/* Button */}
-                <div className="pt-space-md mt-auto">
-                  <a className="w-full flex items-center justify-center gap-space-xs bg-primary hover:bg-primary-container text-on-primary text-t-button py-space-sm px-space-md rounded-xl shadow-sm text-center" href="/console">
-                    <span>Open Full Console</span>
-                    <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-                  </a>
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setSdkOpen(true)} className="h-10 px-4 rounded-xl border font-semibold" style={{ borderColor: PINK, color: PINK }}>Change choices</button>
+                  {shared && Object.keys(shared.received).length > 0 && (
+                    <button type="button" onClick={revoke} className="h-10 px-4 rounded-xl border border-red-300 text-red-700 font-semibold">Stop sharing</button>
+                  )}
                 </div>
               </div>
-            </section>
-          </div>
+
+              <div className={`${card} p-5 flex flex-col gap-3`}>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white" style={{ background: PINK }}>
+                    <span className="material-symbols-outlined">campaign</span>
+                  </div>
+                  <div>
+                    <div className="font-semibold">Ad and analytics companies inside CycleSafe</div>
+                    <div className="text-xs opacity-60">SampleAds SDK</div>
+                  </div>
+                </div>
+                <p className="text-sm opacity-70">This company tries to send your cycle date and your phone&apos;s ID to its servers. SurakshaShield is {shieldOn ? 'on, so private data is stopped and only an anonymous count is sent' : 'off, so everything is sent unchanged'}. You can switch it in the Live Monitor.</p>
+                <button type="button" onClick={runAdSdk} className="self-start h-10 px-4 rounded-xl text-white font-semibold hover:brightness-95" style={{ background: PINK }}>Let SampleAds send data</button>
+              </div>
+
+              <div className={`${card} p-5 flex flex-col gap-2`}>
+                <div className="font-semibold">What tried to leave my phone</div>
+                {leaving.length === 0 && <p className="text-sm opacity-70">Nothing yet.</p>}
+                {leaving.map(e => (
+                  <div key={e.id} className="flex items-center gap-3 p-2.5 rounded-lg border border-[#a53860]/20 text-sm">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{e.dest}</div>
+                      <div className="text-xs opacity-60 truncate">{e.note || e.event}</div>
+                    </div>
+                    <span className="text-xs opacity-60 whitespace-nowrap">{fmt(new Date(e.ts).toISOString())}</span>
+                    <span className={`px-2 py-0.5 rounded uppercase text-[10px] font-bold ${pillTone[e.action] || ''}`} style={e.action === 'shared' || e.action === 'masked' ? { background: PINK } : undefined}>{pillText[e.action] || e.action}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!vault.wiped && tab === 'security' && (
+            <div className="flex flex-col gap-4 max-w-3xl">
+              <div>
+                <h1 className="text-2xl font-bold">Security</h1>
+                <p className="opacity-70 mt-1">Protection against someone watching your phone.</p>
+              </div>
+
+              <div className={`${card} p-5 flex flex-col gap-3`}>
+                <div className="font-semibold">Is someone watching my phone?</div>
+                <p className="text-sm opacity-70">We look for apps with hidden icons or with permission to read your screen.</p>
+                {scan === 'idle' && <button type="button" onClick={runScan} className="self-start h-10 px-4 rounded-xl text-white font-semibold hover:brightness-95" style={{ background: PINK }}>Run a security check</button>}
+                {scan === 'scanning' && <div className="flex items-center gap-2 text-sm"><span className="material-symbols-outlined animate-spin" style={{ color: PINK }}>progress_activity</span>Checking your phone quietly...</div>}
+                {scan === 'found' && <StalkerwareWarning />}
+              </div>
+
+              <div className={`${card} p-5 flex flex-col gap-3`}>
+                <div className="font-semibold">Hide the app for now</div>
+                <p className="text-sm opacity-70">Shows a plain calendar right away. Nothing is deleted. Your real data opens again when you lock the app and enter your real PIN.</p>
+                <button type="button" onClick={hide} className="self-start h-10 px-4 rounded-xl border font-semibold" style={{ borderColor: PINK, color: PINK }}>Hide now</button>
+              </div>
+
+              <div className={`${card} p-5 flex flex-col gap-3`}>
+                <div className="font-semibold">Panic wipe</div>
+                <p className="text-sm opacity-70">In an emergency, tap the CycleSafe logo five times quickly, or use the button below. The encryption key is deleted, so nobody can read your data again.</p>
+                {!confirmWipe
+                  ? <button type="button" onClick={() => setConfirmWipe(true)} className="self-start h-10 px-4 rounded-xl border border-red-300 text-red-700 font-semibold">Use panic wipe now</button>
+                  : (
+                    <div className="flex gap-2">
+                      <button type="button" onClick={panic} className="h-10 px-4 rounded-xl bg-red-600 text-white font-semibold">Yes, do it</button>
+                      <button type="button" onClick={() => setConfirmWipe(false)} className="h-10 px-4 rounded-xl border font-semibold">Cancel</button>
+                    </div>
+                  )}
+              </div>
+            </div>
+          )}
         </div>
       </main>
-      <Footer />
-    </>
+    </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { useEvents } from '../state/events';
 
 // Sandbox counters. A single interval nudges them so every screen that reads
 // them (Home, Console) stays in agreement and moves over time.
@@ -30,13 +31,21 @@ function subscribe(fn) {
   };
 }
 
-export const useMetrics = () => useSyncExternalStore(subscribe, () => state);
+const useBase = () => useSyncExternalStore(subscribe, () => state);
+
+// The counters include what the apps in the other tabs actually did.
+export const useMetrics = () => {
+  const base = useBase();
+  const real = useEvents().filter(e => e.action !== 'info');
+  const count = a => real.filter(e => e.action === a).length;
+  return { ...base, events: base.events + real.length, leaks: base.leaks + count('blocked'), masked: base.masked + count('masked') };
+};
 
 export const fmt = n => n.toLocaleString('en-US');
 
 export const buildKpis = m => [
-  { key: 'events', label: 'Requests inspected', value: fmt(m.events), note: 'Outbound SDK calls, last 24 h', tone: 'text-on-surface' },
-  { key: 'leaks', label: 'Blocked', value: fmt(m.leaks), note: 'Sent to ad or analytics hosts', tone: 'text-error' },
-  { key: 'masked', label: 'Masked', value: fmt(m.masked), note: 'Location and device IDs coarsened', tone: 'text-tertiary-container' },
-  { key: 'threats', label: 'Open alerts', value: String(m.threats), note: 'Runtime rules currently firing', tone: 'text-primary' },
+  { key: 'events', label: 'Data checks', value: fmt(m.events), note: 'Times an app tried to send data out (last 24 hours)', tone: 'text-on-surface' },
+  { key: 'leaks', label: 'Stopped', value: fmt(m.leaks), note: 'Attempts to send private data to advertisers or trackers', tone: 'text-error' },
+  { key: 'masked', label: 'Blurred', value: fmt(m.masked), note: 'Exact locations and device IDs made less precise before sharing', tone: 'text-tertiary-container' },
+  { key: 'threats', label: 'Needs attention', value: String(m.threats), note: 'Privacy warnings active right now', tone: 'text-primary' },
 ];

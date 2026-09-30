@@ -7,6 +7,7 @@ import useLoading from '../hooks/useLoading';
 import useNow from '../hooks/useNow';
 import useTitle from '../hooks/useTitle';
 import { ago } from '../data/traffic';
+import { useEvents, verifyChain } from '../state/events';
 
 export default function ConsoleAuditLedger() {
   useTitle('Audit Ledger');
@@ -16,6 +17,9 @@ export default function ConsoleAuditLedger() {
   const age = sec => ago(base - sec * 1000, now);
   const [isTampered, setIsTampered] = useState(true);
   const [isolated, setIsolated] = useState(false);
+  const live = useEvents();
+  const badAt = verifyChain(live);
+  const liveBlocks = live.slice(-8).map((e, i, arr) => ({ ...e, no: 104916 + live.length - arr.length + i }));
 
   return (
     <>
@@ -27,7 +31,7 @@ export default function ConsoleAuditLedger() {
             <aside className="w-full lg:w-64 flex-shrink-0">
               <div className="bg-surface-container-lowest p-space-md rounded-2xl shadow-sm flex flex-col gap-space-md">
                 <div className="flex flex-col px-space-xs">
-                  <span className="text-t-caption text-on-surface-variant tracking-wider uppercase">Console</span>
+                  <span className="text-t-caption text-on-surface-variant tracking-wider uppercase">Live Monitor</span>
                   <span className="text-t-section text-on-surface">Audit Ledger</span>
                 </div>
                 <ConsoleSidebarNav active="audit" variant="audit" />
@@ -115,7 +119,7 @@ export default function ConsoleAuditLedger() {
                     <div className="flex items-center"><span className="px-space-md py-space-xs rounded-lg bg-primary text-on-primary text-t-card">BLOCK #104,912</span><span className="text-t-caption text-on-surface-variant ml-space-md">{age(840)}</span></div>
                     <span className="text-t-status text-secondary">VALID SIGNATURE</span>
                   </div>
-                  <div className="text-t-body text-on-surface">Duress PIN silent trigger: Decoy logs served & emergency beacon sent</div>
+                  <div className="text-t-body text-on-surface">Consent update: Analytics Provider access to precise location revoked</div>
                   <div className="font-mono text-t-mono text-on-surface-variant mt-space-sm">Hash: 0x9911e3b5a41fd2890b07e8a93ef07a1102e3c7e2</div>
                 </div>
 
@@ -154,6 +158,31 @@ export default function ConsoleAuditLedger() {
                   <div className="font-mono text-t-mono text-on-surface-variant mt-space-sm">Hash: 0x54ec12ab9901178a94ee1800ba</div>
                 </div>
               </div>
+              )}
+
+              {/* Blocks written by the apps in the other tabs. Each one is chained to the one before it. */}
+              {!loading && (
+                <div className="flex flex-col gap-space-lg">
+                  <div className="card flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+                    <div>
+                      <h2 className="text-t-section text-on-surface">Recorded from your apps</h2>
+                      <p className="text-t-body text-on-surface-variant">Every consent decision, block and warning is added here as it happens.</p>
+                    </div>
+                    <span className={`text-t-status uppercase ${badAt === -1 ? 'text-secondary' : 'text-error'}`}>
+                      {live.length === 0 ? 'No entries yet' : badAt === -1 ? `Chain intact, ${live.length} blocks` : `Chain broken at block ${badAt + 1}`}
+                    </span>
+                  </div>
+                  {[...liveBlocks].reverse().map(e => (
+                    <div key={e.id} className="bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm">
+                      <div className="flex items-center justify-between pb-space-md mb-space-md border-b border-outline-variant/30">
+                        <div className="flex items-center"><span className="px-space-md py-space-xs rounded-lg bg-primary text-on-primary text-t-card">BLOCK #{e.no.toLocaleString('en-US')}</span><span className="text-t-caption text-on-surface-variant ml-space-md">{ago(e.ts, now)}</span></div>
+                        <span className="text-t-status text-secondary">VALID SIGNATURE</span>
+                      </div>
+                      <div className="text-t-body text-on-surface">{e.source}: {e.event.replace(/_/g, ' ')} to {e.dest} ({e.action}){e.note ? `. ${e.note}` : ''}</div>
+                      <div className="font-mono text-t-mono text-on-surface-variant mt-space-sm break-all">Hash: 0x{e.hash.slice(0, 40)}</div>
+                    </div>
+                  ))}
+                </div>
               )}
             </section>
           </div>

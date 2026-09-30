@@ -4,42 +4,125 @@ import Footer from '../components/Footer';
 import Skeleton from '../components/Skeleton';
 import useLoading from '../hooks/useLoading';
 import useTitle from '../hooks/useTitle';
+import { useBadge } from '../state/badge';
 
 const badge = {
-  verified: ['verified', 'Verified', 'bg-secondary-container/40 border-secondary/30 text-secondary'],
-  review: ['schedule', 'In review', 'bg-amber-50 border-amber-400 text-amber-800'],
-  none: ['warning', 'Not verified', 'bg-error-container border-error/30 text-error'],
+  trusted: ['verified', 'Trusted', 'bg-secondary-container/40 border-secondary/30 text-secondary'],
+  untrusted: ['warning', 'Not trusted', 'bg-error-container border-error/30 text-error'],
 };
 
-const apps = [
-  {
-    name: 'CycleSafe', state: 'verified', score: 94.2, checked: '2 days ago', summary: 'No sensitive fields reached third-party hosts in the last audit.',
-    checks: [['check_circle', 'text-secondary', 'No health fields sent to ad SDKs'], ['lock', 'text-secondary', 'ML-KEM-768 for vault sync'], ['gavel', 'text-primary', 'Consent gate enforced before first sync']],
-  },
-  {
-    name: 'GenericTracker', state: 'none', score: 38.6, checked: '9 days ago', summary: 'Ad SDKs receive user inputs in plain text.',
-    checks: [['cancel', 'text-error', 'Ovulation date sent to 4 ad hosts'], ['no_encryption', 'text-error', 'Telemetry payload not encrypted'], ['person_off', 'text-error', 'Profiling starts before consent']],
-  },
-  {
-    name: 'PeriodPal', state: 'verified', score: 81.3, checked: '5 days ago', summary: 'Minor finding: crash reports include a device model string.',
-    checks: [['check_circle', 'text-secondary', 'No health fields sent to ad SDKs'], ['warning', 'text-amber-700', 'Device model in crash reports'], ['lock', 'text-secondary', 'TLS 1.3 with certificate pinning']],
-  },
-  {
-    name: 'OvuGuide', state: 'review', score: 63.9, checked: '1 day ago', summary: 'Re-audit in progress after an SDK update on 12 Mar.',
-    checks: [['schedule', 'text-amber-700', 'New analytics SDK under review'], ['check_circle', 'text-secondary', 'Location coarsened to city level'], ['cancel', 'text-error', 'Advertising ID still collected']],
-  },
-  {
-    name: 'HerHealth Diary', state: 'verified', score: 88.1, checked: '3 weeks ago', summary: 'Audit is older than 30 days; a re-check is scheduled.',
-    checks: [['check_circle', 'text-secondary', 'Symptom logs stay on device'], ['lock', 'text-secondary', 'Encrypted cloud backup'], ['schedule', 'text-amber-700', 'Re-audit due in 9 days']],
-  },
-  {
-    name: 'MoonCalendar', state: 'none', score: 41.2, checked: '2 weeks ago', summary: 'Location and cycle data shared with an attribution SDK.',
-    checks: [['cancel', 'text-error', 'Precise GPS sent to attribution host'], ['check_circle', 'text-secondary', 'Login uses PKCE'], ['person_off', 'text-error', 'No opt-out for analytics']],
-  },
+// Every app has its own five checks, written for what that app does. [check] passes; [check, problem]
+// fails, and the problem is shown in plain words instead of the check.
+const rawApps = [
+  { name: 'CycleSafe', checked: '1 day ago', summary: 'Nothing private leaves the app without your say-so.', checks: [
+    ['Your period dates are stored only on your phone'],
+    ['Nothing you log can be seen by advertising companies'],
+    ['Other apps get your data only after you approve each request'],
+    ['You can see a list of every company that has received your data'],
+    ['Passed its most recent check with no problems'],
+  ] },
+  { name: 'MatruCare', checked: '2 days ago', summary: 'Pregnancy records stay private to you and your doctor.', checks: [
+    ['Scan reports and test results are locked with a key only you hold'],
+    ['Your doctor sees only what you choose to show them'],
+    ['Family members cannot open your pregnancy details'],
+    ['Your pregnancy is never used to show baby-product ads'],
+    ['Delivery-date reminders do not name your condition'],
+  ] },
+  { name: 'PeriodPal', checked: '5 days ago', summary: 'Very good, with one small thing to fix.', checks: [
+    ['Your period predictions are worked out on your phone'],
+    ['Lock-screen reminders do not reveal what they are about'],
+    ['Only your city is used for weather and mood tips', 'Uses a more exact location than it needs for daily tips'],
+    ['Deleting your account removes all your logs'],
+    ['Health articles are shown without tracking what you read'],
+  ] },
+  { name: 'HerHealth Diary', checked: '6 weeks ago', summary: 'A good record, but its latest update has not been checked.', checks: [
+    ['Symptom notes stay in a locked diary on your phone'],
+    ['Cloud backups can only be opened by you'],
+    ['Photos of your symptoms are not shared with anyone'],
+    ['You can export your diary and take it to any doctor'],
+    ['Was re-checked after its last big update', 'The last big update has not been re-checked yet'],
+  ] },
+  { name: 'SafeWalk SOS', checked: '3 days ago', summary: 'Good in an emergency, but it shares more than it needs to.', checks: [
+    ['Your location is shared only after you press the SOS button', 'Shares your live location with an outside company before you press SOS'],
+    ['Alerts go only to the trusted contacts you picked'],
+    ['Trip history is wiped once you reach home'],
+    ['Works without uploading your phone contact list'],
+    ['Panic alerts still go out when you have no internet'],
+  ] },
+  { name: 'OvuGuide', checked: '1 week ago', summary: 'Some of your data still goes to advertisers.', checks: [
+    ['Ovulation dates are kept away from ad companies'],
+    ["Your phone's advertising ID is not collected", "Your phone's advertising ID is sent to an ad company"],
+    ['Test-strip photos are deleted after they are read'],
+    ['Fertility tips are not based on what you search elsewhere'],
+    ['Problems found in the last check have been fixed', 'Problems found in the last check are still not fixed'],
+  ] },
+  { name: 'HeartMatch Dating', checked: '9 days ago', summary: 'Your profile is shared more widely than you would expect.', checks: [
+    ['Only people you match with can see your profile', 'People you have not matched with can see your profile'],
+    ['Photo and ID checks are stored safely'],
+    ['Your age and interests are kept out of advertising', 'Shares your age and interests with advertisers'],
+    ['Other users cannot tell which area you live in'],
+    ['People you block can never see you again'],
+  ] },
+  { name: 'MoonCalendar', checked: '2 weeks ago', summary: 'Your location and cycle dates are passed on to other companies.', checks: [
+    ['Cycle dates are not shared with the company that measures its ads', 'Shares your cycle dates with an ad-measuring company'],
+    ['Tracking starts only after you tap agree', 'Starts tracking you before you agree'],
+    ['Your exact position is not sent to any outside company', 'Sends your exact location to a tracking company'],
+    ['Sign-in is protected with a code sent to your phone'],
+    ['You can turn off usage tracking with one tap'],
+  ] },
+  { name: 'ShaadiSathi', checked: '3 weeks ago', summary: 'Your documents and details are not kept safe.', checks: [
+    ['ID documents are kept in locked storage', 'Stores your ID documents where others could read them'],
+    ['Your details reach only the families you choose', 'Shares your details with other companies without asking'],
+    ['Your phone number stays hidden until you agree'],
+    ['Other users cannot save or forward your photos'],
+    ['Old profiles are taken down when people stop using the site', 'Profiles stay online long after people stop using the site'],
+  ] },
+  { name: 'GenericTracker', checked: '12 days ago', summary: 'Sends your private entries straight to advertisers.', checks: [
+    ['Period and ovulation entries are not sent out', 'Sent your ovulation dates to 4 advertising companies'],
+    ['Asks before it starts learning about you', 'Starts building a profile of you before you agree'],
+    ['Your data is scrambled while it travels', 'Sends your data without locking it'],
+    ['Your exact location stays private', 'Sends your exact location to advertisers'],
+    ['Has a clear way to delete your account'],
+  ] },
 ];
 
+// Picks a symbol that shows what a check is about, from its wording. First match wins.
+const iconRules = [
+  [/internet/i, 'wifi_off'],
+  [/sos|alert|panic/i, 'sos'],
+  [/scan reports|test results/i, 'lock'],
+  [/pregnan|delivery|baby/i, 'pregnant_woman'],
+  [/period|cycle|ovulat|fertil/i, 'water_drop'],
+  [/location|position|area|city/i, 'location_on'],
+  [/advert|ads?|ad compan|ad-measuring/i, 'campaign'],
+  [/photo|document|ID/i, 'photo_camera'],
+  [/remind|notification/i, 'notifications'],
+  [/symptom|diary|doctor|export/i, 'stethoscope'],
+  [/contact|phone number|famil|users|match|block|profile can/i, 'group'],
+  [/lock|key|scrambled|backup/i, 'lock'],
+  [/delet|wiped|removes|taken down/i, 'delete'],
+  [/track|learning|profile of/i, 'visibility'],
+  [/approve|permission/i, 'how_to_reg'],
+  [/sign-in|code/i, 'password'],
+  [/check|problem|update|fixed/i, 'fact_check'],
+  [/list|compan/i, 'list_alt'],
+];
+const iconFor = text => (iconRules.find(([re]) => re.test(text)) || [null, 'shield'])[1];
+
+// An app is Trusted when at least three of its five checks pass.
+// Apps are listed by audit date, most recent first (CycleSafe is the most recent).
+// '6 weeks ago' -> 42. Used to order by audit date.
+const daysAgo = text => { const [n, unit] = text.split(' '); return Number(n) * (unit.startsWith('week') ? 7 : 1); };
+
+const apps = rawApps
+  .map(a => {
+    const checks = a.checks.map(([q, problem]) => ({ ok: !problem, text: problem || q, icon: iconFor(q) }));
+    return { ...a, checks, state: checks.filter(c => c.ok).length >= 3 ? 'trusted' : 'untrusted' };
+  })
+  .sort((x, y) => daysAgo(x.checked) - daysAgo(y.checked) || x.name.localeCompare(y.name));
+
 export default function VerifiedRegistry() {
-  useTitle('Verified Registry');
+  useTitle('Trusted Apps');
   const loading = useLoading(700);
   const [query, setQuery] = useState('');
   const [checking, setChecking] = useState(false);
@@ -50,10 +133,15 @@ export default function VerifiedRegistry() {
     window.setTimeout(() => setChecking(false), 700);
   };
 
+  const badgeRecord = useBadge();
+  // A revoked badge shows up here at once.
+  const list = useMemo(() => apps.map(a => (a.name === 'CycleSafe' && badgeRecord.status === 'failed'
+    ? { ...a, state: 'untrusted', summary: 'Failed its latest independent test, and its badge was revoked.' }
+    : a)), [badgeRecord.status]);
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return q ? apps.filter(a => a.name.toLowerCase().includes(q)) : apps;
-  }, [query]);
+    return q ? list.filter(a => a.name.toLowerCase().includes(q)) : list;
+  }, [query, list]);
 
   return (
     <>
@@ -61,8 +149,8 @@ export default function VerifiedRegistry() {
       <main className="w-full pt-20 bg-background text-on-surface min-h-screen">
         <div className="page page-stack">
           <section className="flex flex-col items-center text-center max-w-3xl mx-auto w-full">
-            <h1 className="page-title">Verified Registry</h1>
-            <p className="page-sub">Audit results for health and wellness apps. Scores are from sandbox audits.</p>
+            <h1 className="page-title">Trusted Apps</h1>
+            <p className="page-sub">Each app is checked on the things it is meant to do with your data.</p>
 
             <div className="w-full mt-space-lg card-bordered p-space-sm focus-within:border-primary/40 transition-colors">
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-space-sm">
@@ -114,30 +202,26 @@ export default function VerifiedRegistry() {
 
             {!loading && results.map(app => {
               const [icon, label, tone] = badge[app.state];
-              const scoreTone = app.score >= 80 ? 'text-secondary' : app.score >= 60 ? 'text-amber-700' : 'text-error';
               return (
                 <article key={app.name} className="card-bordered card-hover flex flex-col gap-space-lg">
                   <div className="flex items-center justify-between pb-space-md border-b border-outline-variant/30">
                     <div>
                       <h2 className="text-t-card text-on-surface">{app.name}</h2>
                       <p className="text-t-caption text-on-surface-variant">Last audited {app.checked}</p>
+                      {app.name === 'CycleSafe' && <a href="/badge/cyclesafe" target="_blank" rel="noopener" className="text-t-caption text-primary underline underline-offset-4">Check live</a>}
                     </div>
                     <div className={`inline-flex items-center gap-space-xs px-space-md py-space-xs rounded-full border ${tone}`}>
                       <span className="material-symbols-outlined text-base" aria-hidden="true">{icon}</span>
                       <span className="text-t-status uppercase">{label}</span>
                     </div>
                   </div>
-                  <div className="p-space-md bg-surface-container-low rounded-xl flex items-center justify-between gap-space-md border border-outline-variant/40">
-                    <div>
-                      <span className={`text-t-card tabular-nums ${scoreTone}`}>{app.score.toFixed(1)} / 100</span>
-                      <p className="text-t-caption text-on-surface-variant mt-space-xs">{app.summary}</p>
-                    </div>
-                  </div>
+                  <p className="text-t-body text-on-surface-variant">{app.summary}</p>
                   <div className="flex flex-col gap-space-sm">
-                    {app.checks.map(([ic, color, text]) => (
-                      <div key={text} className="p-space-md rounded-xl bg-surface-container-low border border-outline-variant/40 flex items-center gap-space-md">
-                        <span className={`material-symbols-outlined text-lg ${color}`} aria-hidden="true">{ic}</span>
-                        <span className="text-t-body text-on-surface">{text}</span>
+                    {app.checks.map(c => (
+                      <div key={c.text} className="p-space-md rounded-xl bg-surface-container-low border border-outline-variant/40 flex items-center gap-space-md">
+                        <span className="material-symbols-outlined text-lg shrink-0 text-[#002855]" aria-hidden="true">{c.icon}</span>
+                        <span className="text-t-body text-on-surface flex-1">{c.text}</span>
+                        <span className={`material-symbols-outlined text-lg shrink-0 ${c.ok ? 'text-secondary' : 'text-error'}`} role="img" aria-label={c.ok ? 'Passed' : 'Failed'}>{c.ok ? 'check_circle' : 'cancel'}</span>
                       </div>
                     ))}
                   </div>
@@ -149,22 +233,12 @@ export default function VerifiedRegistry() {
               <div className="lg:col-span-2 card-bordered flex flex-col items-center text-center gap-space-sm py-space-2xl">
                 <div className="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-outline"><span className="material-symbols-outlined">search_off</span></div>
                 <div className="text-t-card">No apps match &ldquo;{query}&rdquo;</div>
-                <p className="text-t-body text-on-surface-variant">Check the spelling, or apply to have the app audited.</p>
+                <p className="text-t-body text-on-surface-variant">Check the spelling and try again.</p>
                 <button type="button" className="btn-secondary mt-space-sm" onClick={() => setQuery('')}>Clear search</button>
               </div>
             )}
           </section>
 
-          <section className="card-bordered flex flex-col sm:flex-row items-center justify-between gap-space-lg">
-            <div>
-              <h2 className="text-t-section">Apply for an audit</h2>
-              <p className="mt-space-xs text-t-body text-on-surface-variant">Integrate the SDK, run the sandbox audit, and get listed once the score is 80 or above.</p>
-            </div>
-            <a className="btn-primary shrink-0" data-path="integration-guide" href="#">
-              <span className="material-symbols-outlined text-lg">security</span>
-              <span>Start audit</span>
-            </a>
-          </section>
         </div>
       </main>
       <Footer />

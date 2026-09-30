@@ -1,7 +1,7 @@
 const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 const pick = list => list[Math.floor(Math.random() * list.length)];
 
-export const destinations = ['Facebook Graph API', 'Google Analytics 4', 'AppsFlyer Attribution', 'Own Health Vault', 'Firebase Crashlytics', 'Unrecognised host'];
+export const destinations = ['Facebook Graph API', 'Google Analytics 4', 'AppsFlyer Attribution', 'Own Health Vault', 'Firebase Crashlytics', 'Unrecognised host', 'ads.sampleads.io', 'HealthPlus'];
 export const statuses = ['Blocked', 'Masked', 'Allowed', 'Encrypted', 'Leaked'];
 
 // [destination, event, status when shield is on, weight]
@@ -32,7 +32,7 @@ const payloads = {
   crash_report: { thread: 'main', signal: 'SIGSEGV' },
   unknown_beacon: { path: '/v2/collect', body: '<opaque, 212 bytes>' },
 };
-export const payloadFor = e => payloads[e.event] || {};
+export const payloadFor = e => e.payload || payloads[e.event] || {};
 
 let seq = 94800;
 

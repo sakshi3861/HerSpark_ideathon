@@ -8,12 +8,18 @@ const styles = {
   Leaked: ['warning', 'bg-error text-on-error'],
 };
 
+const displayLabels = {
+  Blocked: 'Stopped',
+  Masked: 'Blurred',
+};
+
 export default function StatusPill({ status }) {
   const [icon, tone] = styles[status] || ['help', 'bg-surface-container text-on-surface'];
+  const label = displayLabels[status] || status;
   return (
     <span className={`inline-flex items-center gap-space-xs px-space-md py-space-xs rounded-full text-t-status uppercase ${tone}`}>
       <span className="material-symbols-outlined text-[14px]" aria-hidden="true">{icon}</span>
-      {status}
+      {label}
     </span>
   );
 }

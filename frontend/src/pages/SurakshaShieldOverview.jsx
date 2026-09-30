@@ -9,15 +9,15 @@ import StatCard from '../components/StatCard';
 import { buildKpis, useMetrics } from '../data/metrics';
 
 const areas = [
-  { to: '/cyclesafe/welcome', icon: 'vital_signs', title: 'CycleSafe Demo', body: 'See SurakshaShield protecting a real app in action' },
-  { to: '/console', icon: 'terminal', title: 'Console', body: 'Monitor live traffic, threats, and audit logs' },
-  { to: '/registry', icon: 'verified_user', title: 'Verified Registry', body: 'Check if an app is SurakshaShield certified' },
+  { to: '/cyclesafe/home', newTab: true, icon: 'vital_signs', title: 'CycleSafe Demo', body: 'Watch SurakshaShield protect a real period tracking app' },
+  { to: '/console', icon: 'terminal', title: 'Live Monitor', body: 'See what data is moving, spot threats, and review the record of what happened' },
+  { to: '/registry', icon: 'verified_user', title: 'Trusted Apps', body: 'Check if an app has been certified as privacy safe' },
 ];
 
 const steps = [
-  { n: '01', title: 'Classify', body: 'Detects cycle, fertility and location fields in outbound payloads.', tone: 'bg-secondary-container/40 text-secondary' },
-  { n: '02', title: 'Block or Mask', body: 'Drops ad beacons, or replaces values with noise and coarse location.', tone: 'bg-primary-fixed text-primary' },
-  { n: '03', title: 'Encrypt & Sign', body: 'Encrypts vault sync with ML-KEM-768 and appends each event to the audit chain.', tone: 'bg-secondary-container/40 text-secondary' },
+  { n: '01', title: 'Find private data', body: 'We spot personal details like your period dates, location or ID before the app can share them.', tone: 'bg-secondary-container/40 text-secondary' },
+  { n: '02', title: 'Stop or blur', body: 'Ad and tracking companies get nothing private. If something has to be shared, we blur it first.', tone: 'bg-primary-fixed text-primary' },
+  { n: '03', title: 'Lock and record', body: 'Your backups are locked so only you can open them, and every action is saved in a record no one can edit.', tone: 'bg-secondary-container/40 text-secondary' },
 ];
 
 export default function SurakshaShieldOverview() {
@@ -31,7 +31,7 @@ export default function SurakshaShieldOverview() {
         <div className="page page-stack">
           <div>
             <h1 className="page-title">Welcome to SurakshaShield</h1>
-            <p className="page-sub">SDK egress controls and audit status</p>
+            <p className="page-sub">See how your app protects private health, safety and location data</p>
           </div>
 
           <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-space-lg">
@@ -45,11 +45,13 @@ export default function SurakshaShieldOverview() {
               : buildKpis(metrics).map(({ key, ...kpi }) => <StatCard key={key} {...kpi} />)}
           </section>
 
+
+
           <section className="flex flex-col gap-space-md">
             <h2 className="text-t-section text-on-surface">Workspace</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-space-lg">
               {areas.map(area => (
-                <Link key={area.to} to={area.to} className="card card-hover flex flex-col gap-space-md h-full group hover:ring-1 hover:ring-primary/30">
+                <Link key={area.to} to={area.to} {...(area.newTab ? { target: '_blank', rel: 'noopener' } : {})} className="card card-hover flex flex-col gap-space-md h-full group hover:ring-1 hover:ring-primary/30">
                   <div className="flex items-center justify-between">
                     <div className="w-12 h-12 rounded-xl bg-primary-fixed text-primary flex items-center justify-center">
                       <span className="material-symbols-outlined text-[24px]">{area.icon}</span>

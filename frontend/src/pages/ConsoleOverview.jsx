@@ -35,14 +35,13 @@ function useSeries() {
 
 const baseAlerts = [
   { icon: 'warning', tone: 'bg-error-container text-error', title: 'Bulk export attempt', body: 'SDK queued 4,012 encrypted period entries for a single sync.', ageMin: 12 },
-  { icon: 'crisis_alert', tone: 'bg-error text-on-error', title: 'Duress PIN entered', body: 'Decoy log set served. Silent alert sent to console.', ageMin: 47 },
   { icon: 'radar', tone: 'bg-surface-container-highest text-on-surface', title: 'Unregistered destination', body: 'Connection to cdn-edge-7.metrixhub.io blocked at socket level.', ageMin: 126 },
 ];
 
 const ageLabel = min => (min < 60 ? `${min} min ago` : `${Math.floor(min / 60)} hr ${min % 60} min ago`);
 
 export default function ConsoleOverview() {
-  useTitle('Console Overview');
+  useTitle('Live Monitor');
   const loading = useLoading(750);
   const m = useMetrics();
   const now = useNow(1000);
@@ -66,7 +65,7 @@ export default function ConsoleOverview() {
                 <div className="bg-surface-container-lowest p-space-md rounded-2xl shadow-sm flex flex-col gap-space-md">
                   <div className="flex items-center justify-between px-space-xs">
                     <div className="flex flex-col">
-                      <span className="text-t-caption text-on-surface-variant tracking-wider uppercase">Console</span>
+                      <span className="text-t-caption text-on-surface-variant tracking-wider uppercase">Live Monitor</span>
                       <span className="text-t-section text-on-surface">Overview</span>
                     </div>
                   </div>
@@ -77,7 +76,7 @@ export default function ConsoleOverview() {
               <section className="flex-1 min-w-0 flex flex-col gap-space-xl">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-space-md">
                   <div>
-                    <h1 className="page-title">Console Overview</h1>
+                    <h1 className="page-title">Live Monitor Overview</h1>
                     <p className="page-sub">Requests intercepted in the last 24 hours.</p>
                   </div>
                   <span className="inline-flex items-center gap-space-sm text-t-caption text-on-surface-variant sm:mt-space-sm">
@@ -106,7 +105,7 @@ export default function ConsoleOverview() {
                       </div>
                       <div className="flex items-center gap-space-md text-t-caption text-on-surface-variant">
                         <span className="inline-flex items-center gap-space-sm"><span className="w-4 h-0.5 bg-primary-container" />Inspected</span>
-                        <span className="inline-flex items-center gap-space-sm"><span className="w-4 border-t-2 border-dashed border-error" />Blocked</span>
+                        <span className="inline-flex items-center gap-space-sm"><span className="w-4 border-t-2 border-dashed border-error" />Stopped</span>
                       </div>
                     </div>
                     {loading ? <Skeleton className="h-56 w-full" /> : (

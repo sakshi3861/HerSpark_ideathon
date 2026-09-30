@@ -10,7 +10,7 @@ const items = [
 export default function ConsoleSidebarNav({ active, variant = 'overview' }) {
   const spacing = 'gap-space-sm px-space-md h-12 rounded-xl';
   return (
-    <nav className="flex flex-col gap-space-xs" aria-label="Console pages">
+    <nav className="flex flex-col gap-space-xs" aria-label="Live Monitor pages">
       {items.map(item => {
         const selected = active === item.key;
         const activeClass = selected ? 'bg-primary-container text-on-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors';

@@ -1,16 +1,16 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import ConsoleOverview from './pages/ConsoleOverview.jsx';
 import ConsoleLiveTraffic from './pages/ConsoleLiveTraffic.jsx';
 import ConsoleAuditLedger from './pages/ConsoleAuditLedger.jsx';
 import VerifiedRegistry from './pages/VerifiedRegistry.jsx';
 import Landing from './pages/Landing.jsx';
 import SurakshaShieldOverview from './pages/SurakshaShieldOverview.jsx';
-import CycleSafeWelcomeConsent from './pages/CycleSafeWelcomeConsent.jsx';
-import CycleSafeLoginDuressPin from './pages/CycleSafeLoginDuressPin.jsx';
 import NotFound from './pages/NotFound.jsx';
 import CycleSafeHomeDashboard from './pages/CycleSafeHomeDashboard.jsx';
+import HealthAppDashboard from './pages/HealthAppDashboard.jsx';
+import BadgeCheck from './pages/BadgeCheck.jsx';
 import './styles.css';
 
 function App() {
@@ -19,9 +19,10 @@ function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/home" element={<SurakshaShieldOverview />} />
-        <Route path="/cyclesafe/welcome" element={<CycleSafeWelcomeConsent />} />
-        <Route path="/cyclesafe/login" element={<CycleSafeLoginDuressPin />} />
+        <Route path="/cyclesafe" element={<Navigate to="/cyclesafe/home" replace />} />
+        <Route path="/badge/cyclesafe" element={<BadgeCheck />} />
         <Route path="/cyclesafe/home" element={<CycleSafeHomeDashboard />} />
+        <Route path="/healthapp" element={<HealthAppDashboard />} />
         <Route path="/console" element={<ConsoleOverview />} />
         <Route path="/console/live-traffic" element={<ConsoleLiveTraffic />} />
         <Route path="/console/audit-ledger" element={<ConsoleAuditLedger />} />

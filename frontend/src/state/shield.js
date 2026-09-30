@@ -1,9 +1,9 @@
-import { useSyncExternalStore } from 'react';
+import { createStore } from './store';
 
-let on = true;
-const listeners = new Set();
-const subscribe = fn => { listeners.add(fn); return () => listeners.delete(fn); };
+// The Live Monitor's shield switch. Shared across tabs, so flipping it in the console
+// changes what the CycleSafe tab does with the next request.
+const store = createStore('ss-shield', true);
 
-export const getShield = () => on;
-export const toggleShield = () => { on = !on; listeners.forEach(fn => fn()); };
-export const useShield = () => useSyncExternalStore(subscribe, getShield);
+export const getShield = () => store.get();
+export const toggleShield = () => store.set(!store.get());
+export const useShield = () => store.use();
