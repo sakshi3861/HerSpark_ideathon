@@ -67,9 +67,6 @@ export default function Header({ active }) {
             <span className={`text-t-status uppercase ${shieldOn ? 'text-emerald-300' : 'text-red-300'}`}>{shieldOn ? 'SHIELD ON' : 'SHIELD OFF'}</span>
           </button>
           )}
-          <span className="w-9 h-9 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center flex-shrink-0 text-white shadow-md">
-            <span className="material-symbols-outlined text-[18px]">person</span>
-          </span>
         </div>
       </div>
     </header>

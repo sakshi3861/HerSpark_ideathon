@@ -122,7 +122,10 @@ const iconFor = text => (iconRules.find(([re]) => re.test(text)) || [null, 'shie
 // '6 weeks ago' -> 42. Used to order by audit date.
 const daysAgo = text => { const [n, unit] = text.split(' '); return Number(n) * (unit.startsWith('week') ? 7 : 1); };
 
-const apps = rawApps
+// A web address for each company, e.g. "HeartMatch Dating" -> "heartmatch-dating".
+export const slugOf = name => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+export const apps = rawApps
   .map(a => {
     const checks = a.checks.map(([q, problem]) => ({ ok: !problem, text: problem || q, icon: iconFor(q) }));
     return { ...a, checks, state: checks.filter(c => c.ok).length >= 3 ? 'trusted' : 'untrusted' };
@@ -218,7 +221,7 @@ export default function VerifiedRegistry() {
                     <div>
                       <h2 className="text-t-card text-on-surface">{app.name}</h2>
                       <p className="text-t-caption text-on-surface-variant">Last audited {app.checked}</p>
-                      {(app.name === 'CycleSafe' || app.name === 'FinSafe') && <a href={`/badge/${app.name.toLowerCase()}`} target="_blank" rel="noopener" className="text-t-caption text-primary underline underline-offset-4">Check live</a>}
+                      <a href={`/badge/${slugOf(app.name)}`} target="_blank" rel="noopener" className="text-t-caption text-primary underline underline-offset-4">View badge</a>
                     </div>
                     <div className={`inline-flex items-center gap-space-xs px-space-md py-space-xs rounded-full border ${tone}`}>
                       <span className="material-symbols-outlined text-base" aria-hidden="true">{icon}</span>

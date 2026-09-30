@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import ConsoleOverview from './pages/ConsoleOverview.jsx';
 import ConsoleLiveTraffic from './pages/ConsoleLiveTraffic.jsx';
 import ConsoleAuditLedger from './pages/ConsoleAuditLedger.jsx';
+import ConsoleDetails from './pages/ConsoleDetails.jsx';
 import VerifiedRegistry from './pages/VerifiedRegistry.jsx';
 import Landing from './pages/Landing.jsx';
 import SurakshaShieldOverview from './pages/SurakshaShieldOverview.jsx';
@@ -28,6 +29,7 @@ function App() {
         <Route path="/foodapp" element={<PartnerAppDashboard appId="finsafe" />} />
         <Route path="/console" element={<ConsoleOverview />} />
         <Route path="/console/live-traffic" element={<ConsoleLiveTraffic />} />
+        <Route path="/console/details/:kind" element={<ConsoleDetails />} />
         <Route path="/console/audit-ledger" element={<ConsoleAuditLedger />} />
         <Route path="/registry" element={<VerifiedRegistry />} />
         <Route path="*" element={<NotFound />} />

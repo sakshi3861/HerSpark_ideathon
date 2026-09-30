@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import StatCard from '../components/StatCard';
@@ -7,52 +7,26 @@ import ConsoleSidebarNav from '../components/ConsoleSidebarNav';
 import useLoading from '../hooks/useLoading';
 import useNow from '../hooks/useNow';
 import useTitle from '../hooks/useTitle';
-import { buildKpis, useMetrics } from '../data/metrics';
+import { Link } from 'react-router-dom';
+import { buildKpis, fmt, kindOf, useMetrics } from '../data/metrics';
+import { baseAlerts } from '../data/alerts';
 
-const W = 720;
-const H = 280;
-const PAD = { l: 48, r: 16, t: 16, b: 32 };
-const Y_MAX = 4000;
-const x = i => PAD.l + (i * (W - PAD.l - PAD.r)) / 23;
-const y = v => PAD.t + (1 - v / Y_MAX) * (H - PAD.t - PAD.b);
-const line = pts => pts.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
-
-function useSeries() {
-  return useMemo(() => {
-    const hour = new Date().getHours();
-    const total = [];
-    const blocked = [];
-    for (let i = 0; i < 24; i++) {
-      const h = (hour - 23 + i + 24) % 24;
-      const day = 1 - Math.abs(h - 15) / 15; // busier mid-afternoon
-      const t = Math.round(900 + day * 1900 + (Math.random() - 0.5) * 520);
-      total.push(t);
-      blocked.push(Math.round(t * (0.09 + Math.random() * 0.08)));
-    }
-    return { total, blocked, hour };
-  }, []);
-}
-
-const baseAlerts = [
-  { icon: 'warning', tone: 'bg-error-container text-error', title: 'Bulk export attempt', body: 'SDK queued 4,012 encrypted period entries for a single sync.', ageMin: 12 },
-  { icon: 'radar', tone: 'bg-surface-container-highest text-on-surface', title: 'Unregistered destination', body: 'Connection to cdn-edge-7.metrixhub.io blocked at socket level.', ageMin: 126 },
-];
-
-const ageLabel = min => (min < 60 ? `${min} min ago` : `${Math.floor(min / 60)} hr ${min % 60} min ago`);
+const ageLabel = min => (min < 60 ? `${min} min ago` : `${Math.min(99, Math.floor(min / 60))} hr ${min % 60} min ago`);
 
 export default function ConsoleOverview() {
   useTitle('Live Monitor');
   const loading = useLoading(750);
   const m = useMetrics();
   const now = useNow(1000);
-  const { total, blocked, hour } = useSeries();
   const [mountedAt] = useState(() => Date.now());
-
-  const liveTotal = total.map((v, i) => (i === 23 ? Math.min(3900, v + Math.round((m.events - 48214) / 3)) : v));
-  const liveBlocked = blocked.map((v, i) => (i === 23 ? v + (m.leaks - 5983) : v));
-  const sinceUpdate = Math.max(0, Math.round((now - m.updatedAt) / 1000));
+  const outcomes = [
+    { kind: 'encrypted', label: 'Encrypted', value: m.encrypted, color: '#b9b4f0', note: 'Sent out sealed, so only the receiver can read it.' },
+    { kind: 'blurred', label: 'Blurred', value: m.masked, color: '#a9c8f5', note: 'Private details made less exact first, like city instead of address.' },
+    { kind: 'stopped', label: 'Stopped', value: m.leaks, color: '#a8dccf', note: 'Private data that never left the phone.' },
+  ];
+  const maxOutcome = Math.max(1, ...outcomes.map(o => o.value));
+  const sinceUpdate = Math.min(99, Math.max(0, Math.round((now - m.updatedAt) / 1000)));
   const circ = 263.9;
-  const xLabels = [0, 4, 8, 12, 16, 20, 23].map(i => ({ i, label: `${String((hour - 23 + i + 24) % 24).padStart(2, '0')}:00` }));
 
   return (
     <>
@@ -93,50 +67,37 @@ export default function ConsoleOverview() {
                         <div className="flex flex-col gap-space-sm"><Skeleton className="h-10 w-32" /><Skeleton className="h-3 w-40" /></div>
                       </div>
                     ))
-                    : buildKpis(m).map(({ key, ...kpi }) => <StatCard key={key} {...kpi} />)}
+                    : buildKpis(m).map(({ key, ...kpi }) => <Link key={key} to={`/console/details/${kindOf[key]}`} className="block"><StatCard {...kpi} /></Link>)}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
                   <div className="lg:col-span-8 card card-hover flex flex-col gap-space-md">
-                    <div className="flex flex-wrap items-start justify-between gap-space-md">
-                      <div>
-                        <h2 className="text-t-card text-on-surface">Requests per hour</h2>
-                        <p className="text-t-body text-on-surface-variant">All outbound requests vs. requests blocked, last 24 h</p>
-                      </div>
-                      <div className="flex items-center gap-space-md text-t-caption text-on-surface-variant">
-                        <span className="inline-flex items-center gap-space-sm"><span className="w-4 h-0.5 bg-primary-container" />Inspected</span>
-                        <span className="inline-flex items-center gap-space-sm"><span className="w-4 border-t-2 border-dashed border-error" />Stopped</span>
-                      </div>
+                    <div>
+                      <h2 className="text-t-card text-on-surface">What happened to each request</h2>
+                      <p className="text-t-body text-on-surface-variant">What we did with the private data apps tried to send in the last 24 hours.</p>
                     </div>
                     {loading ? <Skeleton className="h-56 w-full" /> : (
-                      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="Requests per hour over the last 24 hours">
-                        <defs>
-                          <linearGradient id="grad-total" x1="0" x2="0" y1="0" y2="1">
-                            <stop offset="0%" stopColor="#4338ca" stopOpacity="0.22" />
-                            <stop offset="100%" stopColor="#4338ca" stopOpacity="0" />
-                          </linearGradient>
-                        </defs>
-                        {[0, 1000, 2000, 3000, 4000].map(v => (
-                          <g key={v}>
-                            <line x1={PAD.l} x2={W - PAD.r} y1={y(v)} y2={y(v)} stroke="#dce9ff" strokeWidth="1" />
-                            <text x={PAD.l - 8} y={y(v) + 4} textAnchor="end" fontSize="12" fill="#777586" fontFamily="JetBrains Mono, monospace">{v === 0 ? '0' : `${v / 1000}k`}</text>
-                          </g>
+                      <div className="flex flex-col gap-space-md justify-center flex-1">
+                        {outcomes.map(o => (
+                          <Link key={o.label} to={`/console/details/${o.kind}`} className="flex flex-col gap-space-xs rounded-xl -mx-space-sm px-space-sm py-space-xs hover:bg-surface-container-low transition-colors">
+                            <div className="flex items-baseline justify-between gap-space-md">
+                              <span className="text-t-body text-on-surface">{o.label}</span>
+                              <span className="text-t-card text-on-surface tabular-nums">{fmt(o.value)}</span>
+                            </div>
+                            <div className="h-3 rounded-full bg-[#f1f2f7] overflow-hidden">
+                              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.max(o.value ? 2 : 0, (o.value / maxOutcome) * 100)}%`, background: o.color }} />
+                            </div>
+                            <span className="text-t-caption text-on-surface-variant">{o.note}</span>
+                          </Link>
                         ))}
-                        {xLabels.map(({ i, label }) => (
-                          <text key={i} x={x(i)} y={H - 10} textAnchor="middle" fontSize="12" fill="#777586" fontFamily="JetBrains Mono, monospace">{label}</text>
-                        ))}
-                        <path d={`${line(liveTotal)} L${x(23)},${y(0)} L${x(0)},${y(0)} Z`} fill="url(#grad-total)" />
-                        <path d={line(liveTotal)} fill="none" stroke="#4338ca" strokeWidth="2" strokeLinejoin="round" />
-                        <path d={line(liveBlocked)} fill="none" stroke="#ba1a1a" strokeWidth="2" strokeDasharray="4 3" strokeLinejoin="round" />
-                        <circle cx={x(23)} cy={y(liveTotal[23])} r="3.5" fill="#4338ca" />
-                      </svg>
+                      </div>
                     )}
                   </div>
 
                   <div className="lg:col-span-4 card card-hover flex flex-col justify-between gap-space-md">
                     <div>
                       <h2 className="text-t-card text-on-surface">Privacy score</h2>
-                      <span className="text-t-caption text-secondary">Above the 85 policy threshold</span>
+                      <span className={`text-t-caption ${m.score >= 85 ? 'text-secondary' : 'text-error'}`}>{m.score >= 85 ? 'Above' : 'Below'} the 85 policy threshold</span>
                     </div>
                     <div className="flex items-center justify-center my-auto">
                       {loading ? <Skeleton className="w-32 h-32 rounded-full" /> : (
@@ -146,12 +107,13 @@ export default function ConsoleOverview() {
                             <circle className="transition-all duration-700" cx="50" cy="50" fill="transparent" r="42" stroke="#006b5f" strokeDasharray={circ} strokeDashoffset={circ * (1 - m.score / 100)} strokeLinecap="round" strokeWidth="10" />
                           </svg>
                           <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-t-title text-on-surface tabular-nums">{m.score.toFixed(1)}</span>
-                            <span className="text-t-caption text-on-surface-variant">/ 100</span>
+                            <span className="text-t-title text-on-surface tabular-nums">{m.score}%</span>
+                            <span className="text-t-caption text-on-surface-variant">kept private</span>
                           </div>
                         </div>
                       )}
                     </div>
+                    <p className="text-t-caption text-on-surface-variant">Out of all requests for private data, the share we stopped or blurred.</p>
                   </div>
                 </div>
 

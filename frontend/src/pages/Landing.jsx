@@ -18,7 +18,7 @@ export default function Landing() {
             <div aria-hidden="true" className="absolute -bottom-40 right-0 w-[560px] h-[560px] rounded-full bg-primary-fixed-dim/40 blur-3xl pointer-events-none" />
             <div className="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-space-2xl items-center relative z-10">
               {/* Left Column: Headline & Subtext */}
-              <div className="lg:col-span-8 flex flex-col items-start text-left">
+              <div className="lg:col-span-7 flex flex-col items-start text-left">
                 <div className="inline-flex items-center gap-space-sm px-space-md py-space-sm rounded-full bg-secondary-container/50 border border-secondary/30 text-secondary text-sm font-semibold tracking-wider uppercase mb-space-lg shadow-sm">
                   <span className="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
                   <span>Intimate Data Protection SDK</span>
@@ -57,16 +57,16 @@ export default function Landing() {
               </div>
 
               {/* Right Column: Editorial Visual + Floating Glass Stat Badge */}
-              <div className="lg:col-span-4 relative flex justify-center">
-                <div className="relative w-full max-w-lg aspect-[4/5] rounded-3xl overflow-hidden bg-surface-container-lowest p-2 border border-outline-variant/40 shadow-2xl shadow-primary/20 group">
+              <div className="lg:col-span-5 relative flex justify-center">
+                <div className="relative w-full max-w-2xl aspect-[53/31] rounded-3xl overflow-hidden bg-surface-container-lowest p-2 border border-outline-variant/40 shadow-2xl shadow-primary/20 group">
                   <img
-                    src="/hero_woman.jpg"
-                    alt="Woman silhouette digital protection visual"
+                    src="/hero_desk.jpg"
+                    alt="Woman engineer watching a data protection dashboard"
                     className="w-full h-full object-cover rounded-2xl transition-transform duration-700 group-hover:scale-105"
                   />
 
                   {/* Floating Glassmorphism Badge */}
-                  <div className="absolute top-space-lg right-space-lg bg-surface-container-lowest border border-outline-variant/40 rounded-2xl p-space-md shadow-sm flex items-center gap-space-md">
+                  <div className="absolute top-space-lg left-space-lg bg-surface-container-lowest border border-outline-variant/40 rounded-2xl p-space-md shadow-sm flex items-center gap-space-md">
                     <div className="w-10 h-10 rounded-xl bg-secondary-container text-secondary flex items-center justify-center">
                       <span className="material-symbols-outlined text-2xl">verified_user</span>
                     </div>
@@ -76,13 +76,6 @@ export default function Landing() {
                     </div>
                   </div>
 
-                  <div className="absolute bottom-space-lg left-space-lg right-space-lg p-space-md rounded-2xl bg-surface-container-lowest border border-outline-variant/40 shadow-sm flex items-center justify-between">
-                    <div className="flex items-center gap-space-sm text-sm text-on-surface-variant">
-                      <span className="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
-                      <span>PQC Lattice Encrypted</span>
-                    </div>
-                    <span className="font-mono text-sm font-semibold text-secondary">AES-256</span>
-                  </div>
                 </div>
               </div>
             </div>

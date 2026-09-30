@@ -35,7 +35,7 @@ export default function Footer() {
       <div className="border-t border-outline-variant/40">
         <div className="max-w-[1440px] mx-auto px-margin py-space-md flex flex-col sm:flex-row items-center justify-between gap-space-sm">
           <span className="text-t-body text-on-surface-variant">© {new Date().getFullYear()} SurakshaShield Cryptographic Systems</span>
-          <span className="inline-flex items-center gap-space-xs text-t-caption text-on-surface-variant"><span className="w-2 h-2 rounded-full bg-secondary" />ML-KEM-768 / AES-256-GCM</span>
+          <span className="inline-flex items-center gap-space-xs text-t-caption text-on-surface-variant"><span className="w-2 h-2 rounded-full bg-secondary" />Design: ML-KEM-768 / AES-256-GCM</span>
         </div>
       </div>
     </footer>

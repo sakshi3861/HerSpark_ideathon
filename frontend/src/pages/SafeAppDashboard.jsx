@@ -6,6 +6,7 @@ import PinLock from '../components/PinLock';
 import DecoyCalendar from '../components/DecoyCalendar';
 import DecoyCalculator from '../components/DecoyCalculator';
 import { sha256 } from '../util/sha256';
+import { send as shieldSend } from '../state/engine';
 import { APPS } from '../data/apps';
 import { kitFor } from '../data/kit';
 import { addEvent, useEvents } from '../state/events';
@@ -46,6 +47,8 @@ export default function SafeAppDashboard({ appId }) {
   const [entries, setEntries] = useState(loadEntries);
   const [scan, setScan] = useState('idle'); // idle | scanning | found
   const [confirmWipe, setConfirmWipe] = useState(false);
+  const [probe, setProbe] = useState(() => JSON.stringify({ event: 'screen_view', email: 'priya@mail.com', city: 'Mumbai' }));
+  const [probeResult, setProbeResult] = useState(null);
   const taps = useRef({ n: 0, t: 0 });
 
   // The tab title must not give the app away while it is locked or showing the decoy.
@@ -82,7 +85,7 @@ export default function SafeAppDashboard({ appId }) {
     const entry = { id: Date.now(), type: logType, values: picked, at: new Date().toISOString() };
     setEntries(cur => [entry, ...cur]);
     const cipher = sha256(JSON.stringify(entry));
-    addEvent({ source: app.name, dest: app.vaultName, event: 'sync_log', action: 'shared', note: 'Saved encrypted to your own vault', payload: { ciphertext: `ML-KEM-768:${cipher.slice(0, 8)}…`, bytes: 480 + picked.length * 32 } });
+    addEvent({ source: app.name, dest: app.vaultName, event: 'sync_log', action: 'shared', note: 'Saved to your own vault', payload: { entry_digest: `${cipher.slice(0, 8)}…`, bytes: 480 + picked.length * 32 } });
     setPicked([]);
     setTab('history');
   };
@@ -102,13 +105,15 @@ export default function SafeAppDashboard({ appId }) {
 
   // Case 5: a third-party ad SDK inside the app tries to send private data and the device ID.
   const runAdSdk = () => {
-    const full = app.ad.full;
-    if (getShield()) {
-      addEvent({ source: 'SampleAds SDK', dest: 'ads.sampleads.io', event: app.ad.event, action: 'blocked', note: app.ad.blocked, payload: full });
-      addEvent({ source: 'SampleAds SDK', dest: 'ads.sampleads.io', event: 'app_open_count', action: 'allowed', note: 'Anonymous count only', payload: { app_opens: 1 } });
-    } else {
-      addEvent({ source: 'SampleAds SDK', dest: 'ads.sampleads.io', event: app.ad.event, action: 'leaked', note: 'Shield was off. Sent unchanged', payload: full });
-    }
+    // No consent was ever given to this company, so every sensitive field is stopped.
+    shieldSend({ source: 'SampleAds SDK', dest: 'ads.sampleads.io', event: app.ad.event, payload: app.ad.full, blockedNote: app.ad.blocked });
+  };
+
+  // Try any request and watch it being sorted.
+  const runProbe = () => {
+    let payload;
+    try { payload = JSON.parse(probe); if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('bad'); } catch { setProbeResult({ error: 'Enter the request as JSON, for example {"email": "a@b.com"}' }); return; }
+    setProbeResult(shieldSend({ source: 'Test request', dest: 'custom.example.com', event: 'custom_request', payload }));
   };
 
   // Case 8: look for signs of stalkerware.
@@ -359,6 +364,25 @@ export default function SafeAppDashboard({ appId }) {
                 </div>
                 <p className="text-sm opacity-70">This company tries to send {app.ad.what} to its servers. SurakshaShield is {shieldOn ? 'on, so private data is stopped and only an anonymous count is sent' : 'off, so everything is sent unchanged'}. You can switch it in the Live Monitor.</p>
                 <button type="button" onClick={runAdSdk} className="self-start h-10 px-4 rounded-xl text-[color:var(--on)] font-semibold hover:brightness-95" style={{ background: PINK }}>Let SampleAds send data</button>
+              </div>
+
+              <div className={`${card} p-5 flex flex-col gap-3`}>
+                <div className="font-semibold">Test a request</div>
+                <p className="text-sm opacity-70">Type any request as JSON. SurakshaShield sorts each field by what it is, then stops or lets it through.</p>
+                <textarea value={probe} onChange={e => setProbe(e.target.value)} rows={3} spellCheck={false} aria-label="Request" className="w-full p-3 rounded-xl border border-[color-mix(in_srgb,var(--app)_40%,transparent)] bg-white font-mono text-xs outline-none" />
+                <button type="button" onClick={runProbe} className="self-start h-10 px-4 rounded-xl border font-semibold" style={{ borderColor: PINK, color: ACC }}>Send through SurakshaShield</button>
+                {probeResult?.error && <p className="text-sm text-red-700">{probeResult.error}</p>}
+                {probeResult?.fields && (
+                  <div className="flex flex-col gap-1">
+                    {probeResult.fields.map(f => (
+                      <div key={f.key} className="flex items-center justify-between gap-3 text-sm p-2 rounded-md border border-[color-mix(in_srgb,var(--app)_20%,transparent)]">
+                        <span className="font-medium truncate">{f.key}</span>
+                        <span className="text-xs opacity-60 whitespace-nowrap">{f.tag}</span>
+                        <span className={`px-2 py-0.5 rounded uppercase text-[10px] font-bold ${f.result === 'block' ? 'bg-gray-100 text-gray-600' : f.sensitive ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'}`}>{f.result === 'block' ? 'Stopped' : probeResult.action === 'leaked' && f.sensitive ? 'Leaked' : 'Sent'}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className={`${card} p-5 flex flex-col gap-2`}>

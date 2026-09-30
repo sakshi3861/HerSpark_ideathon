@@ -5,18 +5,18 @@ import { useEvents } from '../state/events';
 // them (Home, Console) stays in agreement and moves over time.
 const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
-let state = { events: 48214, leaks: 5983, masked: 417, threats: 3, score: 91.7, updatedAt: Date.now() };
+// Starting counts. Kept small on purpose so every number stays under 100.
+export const BASE = { events: 62, leaks: 18, masked: 9, leaked: 2, encrypted: 24 };
+let state = { ...BASE, threats: 3, updatedAt: Date.now() };
 const listeners = new Set();
 let timer = null;
 
 function tick() {
   const s = state;
   state = {
-    events: s.events + rand(3, 21),
-    leaks: s.leaks + (Math.random() < 0.45 ? rand(1, 2) : 0),
-    masked: s.masked + (Math.random() < 0.25 ? 1 : 0),
-    threats: s.threats,
-    score: Math.min(93.4, Math.max(90.2, +(s.score + (Math.random() - 0.5) * 0.3).toFixed(1))),
+    ...s,
+    // Only the number of checks creeps up. Stopped and blurred change only when something really happens, so the score stays put.
+    events: Math.min(80, s.events + (Math.random() < 0.5 ? 1 : 0)),
     updatedAt: Date.now(),
   };
   listeners.forEach(fn => fn());
@@ -36,12 +36,21 @@ const useBase = () => useSyncExternalStore(subscribe, () => state);
 // The counters include what the apps in the other tabs actually did.
 export const useMetrics = () => {
   const base = useBase();
-  const real = useEvents().filter(e => e.action !== 'info');
+  const real = useEvents().filter(e => e.action !== 'info' && Date.now() - e.ts < 24 * 3600e3);
   const count = a => real.filter(e => e.action === a).length;
-  return { ...base, events: base.events + real.length, leaks: base.leaks + count('blocked'), masked: base.masked + count('masked') };
+  const stopped = base.leaks + count('blocked');
+  const blurred = base.masked + count('masked');
+  const leaked = base.leaked + count('leaked');
+  // Every number is capped at 99, so nothing on the page ever has three digits.
+  const cap = n => Math.min(99, n);
+  const score = 93;
+  return { ...base, events: cap(base.events + real.length), leaks: cap(stopped), masked: cap(blurred), leaked: cap(leaked), encrypted: cap(base.encrypted + count('shared')), score };
 };
 
-export const fmt = n => n.toLocaleString('en-US');
+// Which details page each card opens.
+export const kindOf = { events: 'checks', leaks: 'stopped', masked: 'blurred', threats: 'attention' };
+
+export const fmt = n => String(Math.min(99, n));
 
 export const buildKpis = m => [
   { key: 'events', label: 'Data checks', value: fmt(m.events), note: 'Times an app tried to send data out (last 24 hours)', tone: 'text-on-surface' },

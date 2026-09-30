@@ -67,7 +67,7 @@ export const APPS = {
     },
     maskOf: { location: all => ({ city: all.location.city }) },
     partner: {
-      name: 'HealthPlus', color: '#005f73', on: '#ffffff', accent: '#005f73', bg: '#eef7f9', ink: '#0b2a30', icon: 'health_and_safety', route: '/healthapp',
+      name: 'HealthPlus', sdk: { color: '#005f73', tint: '#eef7f9', ink: '#0b2a30', off: '#c5d6da' }, color: '#005f73', on: '#ffffff', accent: '#005f73', bg: '#eef7f9', ink: '#0b2a30', icon: 'health_and_safety', route: '/healthapp',
       storeKey: 'aarogya-shared', pendingKey: 'ss-pending',
       purpose: 'Build a personalised wellness plan and book a gynaecology appointment.',
       sharingPurpose: 'build a wellness plan and book a gynaecology appointment.',
@@ -115,7 +115,7 @@ export const APPS = {
     },
     maskOf: { balance: () => ({ range: '₹25,000 to ₹50,000' }) },
     partner: {
-      name: 'QuickBite', color: '#ad2831', on: '#ffffff', accent: '#ad2831', bg: '#fdf1f1', ink: '#3b0d10', icon: 'lunch_dining', route: '/foodapp',
+      name: 'QuickBite', sdk: { color: '#9d0208', tint: '#fbe8e9', ink: '#3b0d10', off: '#e6cdcf' }, color: '#ad2831', on: '#ffffff', accent: '#ad2831', bg: '#fdf1f1', ink: '#3b0d10', icon: 'lunch_dining', route: '/foodapp',
       storeKey: 'quickbite-shared', pendingKey: 'ss-pending-finsafe',
       purpose: 'Offer pay-later meal credit and collect payment for your orders.',
       sharingPurpose: 'offer pay-later meal credit and collect payment for your orders.',

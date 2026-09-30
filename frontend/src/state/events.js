@@ -9,6 +9,9 @@ const GENESIS = '0'.repeat(64);
 const fieldsOf = e => JSON.stringify([e.id, e.ts, e.source, e.dest, e.event, e.action, e.note || '', e.payload || null]);
 const hashOf = (prev, e) => sha256(prev + fieldsOf(e));
 
+// What a saved entry's hash should be, worked out again from its contents.
+export const recalculate = e => hashOf(e.prev, e);
+
 export function addEvent({ source, dest, event, action, note, payload, bytes }) {
   const list = store.get();
   const prev = list.length ? list[list.length - 1].hash : GENESIS;

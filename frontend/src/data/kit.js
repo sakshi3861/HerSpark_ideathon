@@ -1,5 +1,6 @@
 import { createStore } from '../state/store';
 import { APPS } from './apps';
+import { decide } from '../state/engine';
 
 // Everything the request flow needs for one app, built once from its config.
 const kits = {};
@@ -15,13 +16,9 @@ export function kitFor(id) {
   // decisions: key -> 'allow' | 'mask' | 'block'
   const applyDecisions = decisions => {
     const all = app.dataOf(loadLog());
-    const received = {};
-    requests.forEach(r => {
-      const d = decisions[r.key];
-      if (d === 'allow') received[r.key] = all[r.key];
-      else if (d === 'mask' && app.maskOf[r.key]) received[r.key] = app.maskOf[r.key](all);
-    });
-    return received;
+    const maskers = Object.fromEntries(Object.entries(app.maskOf).map(([k, fn]) => [k, () => fn(all)]));
+    // The owner is answering a data request, so every category needs an explicit yes.
+    return decide(all, decisions, maskers, { strict: true }).kept;
   };
 
   kits[id] = {

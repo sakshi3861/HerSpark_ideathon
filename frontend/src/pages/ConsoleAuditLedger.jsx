@@ -7,7 +7,37 @@ import useLoading from '../hooks/useLoading';
 import useNow from '../hooks/useNow';
 import useTitle from '../hooks/useTitle';
 import { ago } from '../data/traffic';
-import { useEvents, verifyChain } from '../state/events';
+import { recalculate, useEvents, verifyChain } from '../state/events';
+
+// Tap the status to see, in one sentence, what it means.
+// Simple entry numbers. The five examples come first, so your apps' events continue from 6 (kept under 100).
+const eventNo = idx => ((5 + idx) % 99) + 1;
+
+const short = h => `0x${h.slice(0, 10)}…${h.slice(-8)}`;
+
+function HashStatus({ ok = true, label, tip, original, changed }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span className="relative inline-block">
+      <button type="button" onClick={() => setOpen(o => !o)} onBlur={() => setOpen(false)} aria-expanded={open} className={`text-t-status underline decoration-dotted underline-offset-4 ${ok ? 'text-secondary' : 'text-error'}`}>{label}</button>
+      {open && (
+        <span role="tooltip" className="absolute right-0 top-full mt-space-xs z-10 w-72 p-space-sm rounded-lg bg-inverse-surface text-inverse-on-surface text-t-caption normal-case text-left shadow-lg flex flex-col gap-space-xs">
+          <span>{tip}</span>
+          {original && (
+            <>
+              <span className="font-mono text-t-mono break-all"><span className="opacity-70">Original: </span>{original}</span>
+              <span className="font-mono text-t-mono break-all text-error-container"><span className="opacity-70 text-inverse-on-surface">Changed: </span>{changed}</span>
+            </>
+          )}
+        </span>
+      )}
+    </span>
+  );
+}
+
+const OK_TIP = 'Nothing in this event has been changed since it was saved.';
+const BAD_TIP = 'This event was changed after it was saved.';
+const LINEAGE_TIP = 'An earlier event was changed, so this one can no longer be trusted.';
 
 export default function ConsoleAuditLedger() {
   useTitle('Audit Ledger');
@@ -15,11 +45,12 @@ export default function ConsoleAuditLedger() {
   const now = useNow(15000);
   const [base] = useState(() => Date.now());
   const age = sec => ago(base - sec * 1000, now);
-  const [isTampered, setIsTampered] = useState(true);
-  const [isolated, setIsolated] = useState(false);
+  const [checked, setChecked] = useState(false);
   const live = useEvents();
   const badAt = verifyChain(live);
-  const liveBlocks = live.slice(-8).map((e, i, arr) => ({ ...e, no: 104916 + live.length - arr.length + i }));
+  const liveBlocks = live.slice(-8).map((e, i, arr) => ({ ...e, no: 104917 + live.length - arr.length + i, idx: live.length - arr.length + i, valid: badAt === -1 || live.length - arr.length + i < badAt }));
+  // The first changed entry. Every block after it can no longer be trusted either.
+  const broken = badAt === -1 ? null : { original: short(live[badAt].hash), changed: short(recalculate(live[badAt])) };
 
   return (
     <>
@@ -45,60 +76,27 @@ export default function ConsoleAuditLedger() {
                   <div>
                     <h1 className="page-title">Audit Ledger</h1>
                     <p className="page-sub">
-                      SHA-3 hash chain of outbound telemetry events. Verify integrity to check each block against the one before it.
+                      A record of everything your apps did. Each event is linked to the one before it, so any change shows up.
                     </p>
                   </div>
 
-                  {/* 2 Action Buttons */}
-                  <div className="flex items-center gap-space-sm">
+                  <div className="flex flex-col items-start md:items-end gap-space-xs">
                     <button
-                      onClick={() => setIsTampered(false)}
+                      onClick={() => setChecked(true)}
                       className="btn bg-primary-container hover:bg-primary text-on-primary shadow-sm"
                       type="button"
                     >
-                      <span className="material-symbols-outlined text-[18px]">verified_user</span>
-                      <span>Verify Integrity</span>
+                      <span className="material-symbols-outlined text-[18px]">fact_check</span>
+                      <span>Check the record</span>
                     </button>
-
-                    <button
-                      onClick={() => setIsTampered(value => !value)}
-                      className="btn btn-secondary"
-                      type="button"
-                    >
-                      <span className="material-symbols-outlined text-error text-[18px]">gpp_maybe</span>
-                      <span>{isTampered ? 'Active Breach Simulation' : 'Simulate Tampering'}</span>
-                    </button>
+                    {checked && (
+                      <span className={`text-t-caption ${badAt === -1 ? 'text-secondary' : 'text-error'}`}>
+                        {badAt === -1 ? 'All events check out. Nothing was changed.' : `Event ${eventNo(badAt)} was changed after it was saved.`}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
-
-              {/* Tamper Alert Banner */}
-              {isTampered && (
-                <div className="bg-error-container text-on-error-container p-space-lg rounded-2xl shadow-sm transition-all">
-                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md">
-                    <div className="flex items-start gap-space-md">
-                      <div className="w-10 h-10 rounded-full bg-error text-on-error flex items-center justify-center flex-shrink-0 mt-space-xs">
-                        <span className="material-symbols-outlined text-[24px]">crisis_alert</span>
-                      </div>
-                      <div>
-                        <span className="text-t-status uppercase bg-error text-on-error px-space-sm py-space-xs rounded">INTEGRITY CHECK FAILED</span>
-                        <h2 className="text-t-section text-on-error-container mt-space-xs">
-                          Stored hash for block #104,914 does not match the recalculated hash.
-                        </h2>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-space-xs flex-shrink-0">
-                      <button onClick={() => setIsolated(true)} className={`btn bg-error text-on-error ${isolated ? 'opacity-70' : ''}`} type="button">
-                        {isolated ? 'Node Isolated' : 'Isolate Node'}
-                      </button>
-                      <button onClick={() => { setIsTampered(false); setIsolated(false); }} className="btn bg-surface-container-lowest text-on-error-container" type="button">
-                        Restore Canonical Chain
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Block Chain Visualization (Trimmed to 4 Blocks) */}
               {loading ? (
@@ -116,46 +114,46 @@ export default function ConsoleAuditLedger() {
                 {/* Block 1 */}
                 <div className="bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm">
                   <div className="flex items-center justify-between pb-space-md mb-space-md border-b border-outline-variant/30">
-                    <div className="flex items-center"><span className="px-space-md py-space-xs rounded-lg bg-primary text-on-primary text-t-card">BLOCK #104,912</span><span className="text-t-caption text-on-surface-variant ml-space-md">{age(840)}</span></div>
-                    <span className="text-t-status text-secondary">VALID SIGNATURE</span>
+                    <div className="flex items-center"><span className="px-space-md py-space-xs rounded-lg bg-primary text-on-primary text-t-card">Event 1</span><span className="text-t-caption text-on-surface-variant ml-space-md">{age(840)}</span></div>
+                    <HashStatus label="HASH VALID" tip={OK_TIP} />
                   </div>
                   <div className="text-t-body text-on-surface">Consent update: Analytics Provider access to precise location revoked</div>
-                  <div className="font-mono text-t-mono text-on-surface-variant mt-space-sm">Hash: 0x9911e3b5a41fd2890b07e8a93ef07a1102e3c7e2</div>
                 </div>
 
                 {/* Block 2 */}
                 <div className="bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm">
                   <div className="flex items-center justify-between pb-space-md mb-space-md border-b border-outline-variant/30">
-                    <div className="flex items-center"><span className="px-space-md py-space-xs rounded-lg bg-primary text-on-primary text-t-card">BLOCK #104,913</span><span className="text-t-caption text-on-surface-variant ml-space-md">{age(540)}</span></div>
-                    <span className="text-t-status text-secondary">VALID SIGNATURE</span>
+                    <div className="flex items-center"><span className="px-space-md py-space-xs rounded-lg bg-primary text-on-primary text-t-card">Event 2</span><span className="text-t-caption text-on-surface-variant ml-space-md">{age(540)}</span></div>
+                    <HashStatus label="HASH VALID" tip={OK_TIP} />
                   </div>
                   <div className="text-t-body text-on-surface">Encrypted sync: Reproductive biomarker vault to Own Server</div>
-                  <div className="font-mono text-t-mono text-on-surface-variant mt-space-sm">Hash: 0x89ab12f04ce8e721a9954d6a89c02ff3990099ea</div>
                 </div>
 
-                {/* Block 3 - Tamper Point */}
-                <div className={`rounded-2xl p-space-lg transition-all ${isTampered ? 'bg-error-container/30 shadow-sm border border-error' : 'bg-surface-container-lowest shadow-sm'}`}>
+                {/* Block 3 */}
+                <div className="rounded-2xl p-space-lg bg-error-container/30 shadow-sm border border-error">
                   <div className="flex items-center justify-between pb-space-md mb-space-md border-b border-outline-variant/30">
-                    <div className="flex items-center"><span className={`px-space-md py-space-xs rounded-lg text-t-card ${isTampered ? 'bg-error text-on-error' : 'bg-primary text-on-primary'}`}>BLOCK #104,914</span><span className="text-t-caption text-on-surface-variant ml-space-md">{age(360)}</span></div>
-                    <span className={`text-t-status ${isTampered ? 'text-error' : 'text-secondary'}`}>{isTampered ? 'HASH MISMATCH DETECTED' : 'VALID SIGNATURE'}</span>
+                    <div className="flex items-center"><span className="px-space-md py-space-xs rounded-lg bg-error text-on-error text-t-card">Event 3</span><span className="text-t-caption text-on-surface-variant ml-space-md">{age(360)}</span></div>
+                    <HashStatus ok={false} label="HASH MISMATCH DETECTED" tip={BAD_TIP} original="0x89ab12f04c…990099ea" changed="0x4f1c07be92…a1f0b2c3" />
                   </div>
                   <div className="text-t-body text-on-surface">Sensitive event blocked: LogFertility to Facebook Graph API</div>
-                  {isTampered && (
-                    <div className="mt-space-md p-space-md bg-surface-container-lowest rounded-xl font-mono text-t-mono text-error">
-                      Expected: 0x89ab12f04ce8e721a9954d6a89c02ff3990099ea<br />
-                      Recalculated: 0xDEADBEEF47710984cca90114009aeeff107710a1 (FORGED)
-                    </div>
-                  )}
                 </div>
 
                 {/* Block 4 */}
                 <div className="bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm">
                   <div className="flex items-center justify-between pb-space-md mb-space-md border-b border-outline-variant/30">
-                    <div className="flex items-center"><span className="px-space-md py-space-xs rounded-lg bg-primary text-on-primary text-t-card">BLOCK #104,915</span><span className="text-t-caption text-on-surface-variant ml-space-md">{age(130)}</span></div>
-                    <span className={`text-t-status ${isTampered ? 'text-error' : 'text-secondary'}`}>{isTampered ? 'BROKEN LINEAGE' : 'VALID SIGNATURE'}</span>
+                    <div className="flex items-center"><span className="px-space-md py-space-xs rounded-lg bg-primary text-on-primary text-t-card">Event 4</span><span className="text-t-caption text-on-surface-variant ml-space-md">{age(130)}</span></div>
+                    <HashStatus label="HASH VALID" tip={OK_TIP} />
                   </div>
                   <div className="text-t-body text-on-surface">Allowed event: screen_view sanitized telemetry to Google Analytics</div>
-                  <div className="font-mono text-t-mono text-on-surface-variant mt-space-sm">Hash: 0x54ec12ab9901178a94ee1800ba</div>
+                </div>
+
+                {/* Block 5 */}
+                <div className="rounded-2xl p-space-lg bg-error-container/30 shadow-sm border border-error">
+                  <div className="flex items-center justify-between pb-space-md mb-space-md border-b border-outline-variant/30">
+                    <div className="flex items-center"><span className="px-space-md py-space-xs rounded-lg bg-error text-on-error text-t-card">Event 5</span><span className="text-t-caption text-on-surface-variant ml-space-md">{age(45)}</span></div>
+                    <HashStatus ok={false} label="HASH MISMATCH DETECTED" tip={BAD_TIP} original="0x54ec12ab99…1ee1800b" changed="0xc90d3e7a15…d24f6e08" />
+                  </div>
+                  <div className="text-t-body text-on-surface">Consent update: Ad company access to account balance revoked</div>
                 </div>
               </div>
               )}
@@ -163,23 +161,13 @@ export default function ConsoleAuditLedger() {
               {/* Blocks written by the apps in the other tabs. Each one is chained to the one before it. */}
               {!loading && (
                 <div className="flex flex-col gap-space-lg">
-                  <div className="card flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
-                    <div>
-                      <h2 className="text-t-section text-on-surface">Recorded from your apps</h2>
-                      <p className="text-t-body text-on-surface-variant">Every consent decision, block and warning is added here as it happens.</p>
-                    </div>
-                    <span className={`text-t-status uppercase ${badAt === -1 ? 'text-secondary' : 'text-error'}`}>
-                      {live.length === 0 ? 'No entries yet' : badAt === -1 ? `Chain intact, ${live.length} blocks` : `Chain broken at block ${badAt + 1}`}
-                    </span>
-                  </div>
                   {[...liveBlocks].reverse().map(e => (
                     <div key={e.id} className="bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm">
                       <div className="flex items-center justify-between pb-space-md mb-space-md border-b border-outline-variant/30">
-                        <div className="flex items-center"><span className="px-space-md py-space-xs rounded-lg bg-primary text-on-primary text-t-card">BLOCK #{e.no.toLocaleString('en-US')}</span><span className="text-t-caption text-on-surface-variant ml-space-md">{ago(e.ts, now)}</span></div>
-                        <span className="text-t-status text-secondary">VALID SIGNATURE</span>
+                        <div className="flex items-center"><span className="px-space-md py-space-xs rounded-lg bg-primary text-on-primary text-t-card">Event {eventNo(e.idx)}</span><span className="text-t-caption text-on-surface-variant ml-space-md">{ago(e.ts, now)}</span></div>
+                        <HashStatus ok={e.valid} label={e.valid ? 'HASH VALID' : 'HASH MISMATCH DETECTED'} tip={e.valid ? OK_TIP : e.idx === badAt ? BAD_TIP : LINEAGE_TIP} original={broken && !e.valid ? broken.original : undefined} changed={broken && !e.valid ? broken.changed : undefined} />
                       </div>
                       <div className="text-t-body text-on-surface">{e.source}: {e.event.replace(/_/g, ' ')} to {e.dest} ({e.action}){e.note ? `. ${e.note}` : ''}</div>
-                      <div className="font-mono text-t-mono text-on-surface-variant mt-space-sm break-all">Hash: 0x{e.hash.slice(0, 40)}</div>
                     </div>
                   ))}
                 </div>

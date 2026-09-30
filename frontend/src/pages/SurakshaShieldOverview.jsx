@@ -6,7 +6,7 @@ import useLoading from '../hooks/useLoading';
 import useTitle from '../hooks/useTitle';
 import Footer from '../components/Footer';
 import StatCard from '../components/StatCard';
-import { buildKpis, useMetrics } from '../data/metrics';
+import { buildKpis, kindOf, useMetrics } from '../data/metrics';
 
 const areas = [
   { to: '/cyclesafe/home', newTab: true, icon: 'vital_signs', title: 'CycleSafe Demo', body: 'Watch SurakshaShield protect a real period tracking app' },
@@ -18,7 +18,7 @@ const areas = [
 const steps = [
   { n: '01', title: 'Find private data', body: 'We spot personal details like your period dates, location or ID before the app can share them.', tone: 'bg-secondary-container/40 text-secondary' },
   { n: '02', title: 'Stop or blur', body: 'Ad and tracking companies get nothing private. If something has to be shared, we blur it first.', tone: 'bg-primary-fixed text-primary' },
-  { n: '03', title: 'Lock and record', body: 'Your backups are locked so only you can open them, and every action is saved in a record no one can edit.', tone: 'bg-secondary-container/40 text-secondary' },
+  { n: '03', title: 'Lock and record', body: 'Your backups are locked so only you can open them, and every action is saved in a record where any change is detected.', tone: 'bg-secondary-container/40 text-secondary' },
 ];
 
 export default function SurakshaShieldOverview() {
@@ -43,7 +43,7 @@ export default function SurakshaShieldOverview() {
                   <div className="flex flex-col gap-space-sm"><Skeleton className="h-10 w-32" /><Skeleton className="h-3 w-40" /></div>
                 </div>
               ))
-              : buildKpis(metrics).map(({ key, ...kpi }) => <StatCard key={key} {...kpi} />)}
+              : buildKpis(metrics).map(({ key, ...kpi }) => <Link key={key} to={`/console/details/${kindOf[key]}`} className="block"><StatCard {...kpi} /></Link>)}
           </section>
 
 

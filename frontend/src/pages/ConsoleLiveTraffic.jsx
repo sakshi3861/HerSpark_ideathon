@@ -9,6 +9,8 @@ import useNow from '../hooks/useNow';
 import useTitle from '../hooks/useTitle';
 import { useShield } from '../state/shield';
 import { useEvents } from '../state/events';
+import { askedFor } from '../data/asked';
+import { redact } from '../state/engine';
 import { ago, clock, destinations, makeEvent, payloadFor, seedEvents, statuses } from '../data/traffic';
 
 const PAGE_SIZE = 10;
@@ -17,7 +19,7 @@ const outcome = {
   Blocked: 'Request dropped before serialization. No bytes left the device.',
   Masked: 'Identifiers were coarsened before the request was sent.',
   Allowed: 'No sensitive fields detected. Sent unchanged.',
-  Encrypted: 'Payload sealed with ML-KEM-768 before leaving the app.',
+  Encrypted: 'Production design: payload sealed with ML-KEM-768 before leaving the app.',
   Leaked: 'Shield was off. The original payload was sent to the destination.',
 };
 
@@ -75,7 +77,8 @@ export default function ConsoleLiveTraffic() {
   const filtersActive = query || dest !== 'All destinations' || status !== 'All statuses';
   const clearFilters = () => { setQuery(''); setDest('All destinations'); setStatus('All statuses'); setLimit(PAGE_SIZE); };
 
-  const buffer = selected ? JSON.stringify(payloadFor(selected), null, 2) : '';
+  const wordFor = { Blocked: 'stopped', Masked: 'blurred', Allowed: 'sent', Encrypted: 'encrypted', Leaked: 'leaked' };
+  const buffer = selected ? JSON.stringify(redact(payloadFor(selected), {}, wordFor[selected.status] || 'stopped'), null, 2) : '';
   const copyBuffer = async () => {
     try { await navigator.clipboard.writeText(buffer); setCopied(true); window.setTimeout(() => setCopied(false), 2000); } catch { setCopied(false); }
   };
@@ -224,6 +227,19 @@ export default function ConsoleLiveTraffic() {
                       </div>
                       <h2 className="text-t-card text-on-surface">{selected.dest}</h2>
                       <p className="text-t-body text-on-surface-variant">{outcome[selected.status]}</p>
+                      <div className="flex flex-col gap-space-xs">
+                        <span className="text-t-status uppercase text-outline">What was asked</span>
+                        {askedFor({ ...selected, payload: payloadFor(selected) }).length === 0 && <span className="text-t-body text-on-surface-variant">Nothing private in this request.</span>}
+                        {askedFor({ ...selected, payload: payloadFor(selected) }).map(a => (
+                          <div key={a.label} className="flex items-center justify-between gap-space-sm p-space-sm rounded-xl bg-surface-container-low border border-outline-variant/40">
+                            <div className="min-w-0">
+                              <div className="text-t-body text-on-surface truncate">{a.label}</div>
+                              <div className="text-t-caption text-on-surface-variant">{a.tag}</div>
+                            </div>
+                            <StatusPill status={a.outcome} />
+                          </div>
+                        ))}
+                      </div>
                       <dl className="grid grid-cols-2 gap-space-md text-t-body">
                         <div><dt className="text-t-caption text-on-surface-variant">Latency</dt><dd className="font-mono text-t-mono text-on-surface">{selected.latency} ms</dd></div>
                         <div><dt className="text-t-caption text-on-surface-variant">Size</dt><dd className="font-mono text-t-mono text-on-surface">{selected.bytes} B</dd></div>

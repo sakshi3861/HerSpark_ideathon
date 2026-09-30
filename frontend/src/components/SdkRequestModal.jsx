@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { kitFor } from '../data/kit';
-import { addEvent } from '../state/events';
+import { addEvent, getEvents } from '../state/events';
 
 // One entry in the shared log for every category the user decided on.
 const logDecisions = (kit, decisions, received) => {
@@ -11,17 +11,19 @@ const logDecisions = (kit, decisions, received) => {
       source: app.name, dest: APP_NAME, event: `share_${r.key}`,
       action: d === 'allow' ? 'shared' : d === 'mask' ? 'masked' : 'blocked',
       note: d === 'block' ? 'You did not allow this' : d === 'mask' ? r.maskLabel : 'You allowed this',
-      payload: received[r.key] ?? {},
+      // Only the category and what happened to it, never the value.
+      payload: { [r.key]: `[${r.sense}, ${d === 'allow' ? 'sent' : d === 'mask' ? 'blurred' : 'stopped'}]` },
     });
   });
 };
 
-const SDK = '#005f73';
 
 // SurakshaShield SDK pop-up: reports on a third party's data request and lets the user decide.
 export default function SdkRequestModal({ appId, onClose }) {
   const kit = kitFor(appId);
-  const { app, requests, APP_NAME, PURPOSE, defaultDecisions, applyDecisions, proofHash, saveShared, setPending } = kit;
+  // The pop-up takes on the requesting app's SDK colours. CycleSafe's stays teal, FinSafe's is red.
+  const { color: SDK, tint: TINT, ink: INK, off: OFF } = kit.partner.sdk;
+  const { app, requests, APP_NAME, PURPOSE, defaultDecisions, applyDecisions, saveShared, setPending } = kit;
   const [decisions, setDecisions] = useState(defaultDecisions);
   const [done, setDone] = useState(null);
   const neededCount = requests.filter(r => r.needed).length;
@@ -31,9 +33,10 @@ export default function SdkRequestModal({ appId, onClose }) {
 
   const submit = async () => {
     const received = applyDecisions(decisions);
-    const proof = await proofHash(received);
-    saveShared({ received, decisions, proof, at: new Date().toISOString() });
     logDecisions(kit, decisions, received);
+    // The proof is the hash of the last Proof Chain entry written for this request, so it can be found in the Audit Ledger.
+    const proof = getEvents().slice(-1)[0].hash;
+    saveShared({ received, decisions, proof, at: new Date().toISOString() });
     setPending(false);
     setDone({ proof, count: Object.keys(received).length });
   };
@@ -47,8 +50,8 @@ export default function SdkRequestModal({ appId, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0b2a30]/50" role="dialog" aria-modal="true" aria-label="SurakshaShield data request">
-      <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-2xl bg-white shadow-2xl border-2 text-[#0b2a30]" style={{ borderColor: SDK }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" role="dialog" aria-modal="true" aria-label="SurakshaShield data request">
+      <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-2xl bg-white shadow-2xl border-2 " style={{ borderColor: SDK, color: INK }}>
         <div className="flex items-center gap-3 p-5 text-white rounded-t-xl" style={{ background: SDK }}>
           <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
           <div>
@@ -59,7 +62,7 @@ export default function SdkRequestModal({ appId, onClose }) {
 
         {!done ? (
           <div className="p-5 flex flex-col gap-4">
-            <div className="p-4 rounded-xl text-sm" style={{ background: '#eef7f9' }}>
+            <div className="p-4 rounded-xl text-sm" style={{ background: TINT }}>
               <div className="font-semibold mb-1">Report</div>
               <p>Stated purpose: {PURPOSE}</p>
               <p className="mt-1"><b>{neededCount}</b> of {requests.length} requests are needed for that purpose. <b>{requests.length - neededCount}</b> can be ignored.</p>
@@ -87,7 +90,7 @@ export default function SdkRequestModal({ appId, onClose }) {
                         ))}
                       </div>
                     ) : (
-                      <button type="button" role="switch" aria-checked={d === 'allow'} aria-label={`Share ${r.label}`} onClick={() => setOne(r.key, d === 'allow' ? 'block' : 'allow')} className="w-11 h-6 rounded-full p-0.5 transition-colors shrink-0" style={{ background: d === 'allow' ? SDK : '#c5d6da' }}>
+                      <button type="button" role="switch" aria-checked={d === 'allow'} aria-label={`Share ${r.label}`} onClick={() => setOne(r.key, d === 'allow' ? 'block' : 'allow')} className="w-11 h-6 rounded-full p-0.5 transition-colors shrink-0" style={{ background: d === 'allow' ? SDK : OFF }}>
                         <span className={`block w-5 h-5 rounded-full bg-white shadow transition-transform ${d === 'allow' ? 'translate-x-5' : ''}`} />
                       </button>
                     )}
@@ -107,8 +110,8 @@ export default function SdkRequestModal({ appId, onClose }) {
           <div className="p-5 flex flex-col gap-4">
             <p>{APP_NAME} will receive {done.count} of {requests.length} categories. Everything else stays in {app.name}.</p>
             <div className="flex flex-col gap-2 text-sm">
-              {[['lock', 'Encrypted with ECC + ML-KEM hybrid key exchange'], ['draw', 'Signed with ML-DSA'], ['link', 'Recorded in the Proof Chain']].map(([ic, text]) => (
-                <div key={text} className="flex items-center gap-2 p-2.5 rounded-lg" style={{ background: '#eef7f9' }}>
+              {[['lock', 'Production design: hybrid ECC + ML-KEM key exchange'], ['draw', 'Production design: ML-DSA signature'], ['link', 'Recorded in the Proof Chain (hash linked, any change is detected)']].map(([ic, text]) => (
+                <div key={text} className="flex items-center gap-2 p-2.5 rounded-lg" style={{ background: TINT }}>
                   <span className="material-symbols-outlined text-[20px]" style={{ color: SDK }}>{ic}</span>{text}
                 </div>
               ))}
