@@ -1,31 +1,43 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import './index.css';
-import ClinicDetail from './pages/ClinicDetailShreeDentalCareFixTasks.jsx';
-import ClinicPortal from './pages/ClinicPortalSunriseFamilyClinicDesktop.jsx';
-import SelectRole from './pages/CyberSakhiBoxSelectRoleDesktop.jsx';
-import PartnerHub from './pages/CyberSakhiPartnerHubSnehaKulkarni.jsx';
-import PartnerDashboard from './pages/PartnerDashboardCyberSakhiBox.jsx';
-import PartnerPortal from './pages/PartnerPortalCyberSakhiHubDesktop.jsx';
-import ScamCheck from './pages/ScamCheckSunriseFamilyClinic.jsx';
-import SetupHealth from './pages/SetupHealthScoreSunriseFamilyClinic.jsx';
-import SecurityOverview from './pages/SunriseFamilyClinicSecurityOverview.jsx';
+import { StoreProvider } from './store.jsx';
+import Shell from './components/Shell.jsx';
+import RoleSelect from './pages/RoleSelect.jsx';
+import PartnerDashboard from './pages/PartnerDashboard.jsx';
+import ClinicDetail from './pages/ClinicDetail.jsx';
+import Earnings from './pages/Earnings.jsx';
+import Health from './pages/Health.jsx';
+import ScamCheck from './pages/ScamCheck.jsx';
+import Backup from './pages/Backup.jsx';
+import Approvals from './pages/Approvals.jsx';
+import Report from './pages/Report.jsx';
 
 function App() {
-  return <BrowserRouter><Routes>
-    <Route path="/" element={<SelectRole />} />
-    <Route path="/clinic-detail" element={<ClinicDetail />} />
-    <Route path="/clinic-portal" element={<ClinicPortal />} />
-    <Route path="/select-role" element={<SelectRole />} />
-    <Route path="/partner-hub" element={<PartnerHub />} />
-    <Route path="/partner-dashboard" element={<PartnerDashboard />} />
-    <Route path="/partner-portal" element={<PartnerPortal />} />
-    <Route path="/scam-check" element={<ScamCheck />} />
-    <Route path="/setup-health-score" element={<SetupHealth />} />
-    <Route path="/security-overview" element={<SecurityOverview />} />
-    <Route path="*" element={<Navigate to="/" replace />} />
-  </Routes></BrowserRouter>;
+  return (
+    <StoreProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<RoleSelect />} />
+          <Route path="/partner" element={<Shell role="partner" />}>
+            <Route index element={<PartnerDashboard />} />
+            <Route path="clinic/:id" element={<ClinicDetail />} />
+            <Route path="earnings" element={<Earnings />} />
+          </Route>
+          <Route path="/clinic" element={<Shell role="clinic" />}>
+            <Route index element={<Navigate to="health" replace />} />
+            <Route path="health" element={<Health />} />
+            <Route path="scam-check" element={<ScamCheck />} />
+            <Route path="backup" element={<Backup />} />
+            <Route path="approvals" element={<Approvals />} />
+            <Route path="report" element={<Report />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </StoreProvider>
+  );
 }
 
 createRoot(document.getElementById('root')).render(<React.StrictMode><App /></React.StrictMode>);
