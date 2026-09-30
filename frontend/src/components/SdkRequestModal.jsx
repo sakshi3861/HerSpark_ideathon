@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { APP_NAME, PURPOSE, requests, defaultDecisions, applyDecisions, proofHash, saveShared, setPending } from '../data/healthRequest';
+import { kitFor } from '../data/kit';
 import { addEvent } from '../state/events';
 
 // One entry in the shared log for every category the user decided on.
-const logDecisions = (decisions, received) => {
+const logDecisions = (kit, decisions, received) => {
+  const { app, requests, APP_NAME } = kit;
   requests.forEach(r => {
     const d = decisions[r.key];
     addEvent({
-      source: 'CycleSafe', dest: APP_NAME, event: `share_${r.key}`,
+      source: app.name, dest: APP_NAME, event: `share_${r.key}`,
       action: d === 'allow' ? 'shared' : d === 'mask' ? 'masked' : 'blocked',
-      note: d === 'block' ? 'You did not allow this' : d === 'mask' ? 'City only' : 'You allowed this',
+      note: d === 'block' ? 'You did not allow this' : d === 'mask' ? r.maskLabel : 'You allowed this',
       payload: received[r.key] ?? {},
     });
   });
@@ -18,7 +19,9 @@ const logDecisions = (decisions, received) => {
 const SDK = '#005f73';
 
 // SurakshaShield SDK pop-up: reports on a third party's data request and lets the user decide.
-export default function SdkRequestModal({ onClose }) {
+export default function SdkRequestModal({ appId, onClose }) {
+  const kit = kitFor(appId);
+  const { app, requests, APP_NAME, PURPOSE, defaultDecisions, applyDecisions, proofHash, saveShared, setPending } = kit;
   const [decisions, setDecisions] = useState(defaultDecisions);
   const [done, setDone] = useState(null);
   const neededCount = requests.filter(r => r.needed).length;
@@ -30,7 +33,7 @@ export default function SdkRequestModal({ onClose }) {
     const received = applyDecisions(decisions);
     const proof = await proofHash(received);
     saveShared({ received, decisions, proof, at: new Date().toISOString() });
-    logDecisions(decisions, received);
+    logDecisions(kit, decisions, received);
     setPending(false);
     setDone({ proof, count: Object.keys(received).length });
   };
@@ -38,7 +41,7 @@ export default function SdkRequestModal({ onClose }) {
   const denyAll = () => {
     const decisions = Object.fromEntries(requests.map(r => [r.key, 'block']));
     saveShared({ received: {}, decisions, proof: null, at: new Date().toISOString() });
-    logDecisions(decisions, {});
+    logDecisions(kit, decisions, {});
     setPending(false);
     onClose();
   };
@@ -79,7 +82,7 @@ export default function SdkRequestModal({ onClose }) {
                     </div>
                     {r.canMask ? (
                       <div className="flex rounded-lg overflow-hidden border shrink-0 text-xs font-semibold" style={{ borderColor: SDK }}>
-                        {[['allow', 'Exact'], ['mask', 'City only'], ['block', 'Block']].map(([v, label]) => (
+                        {[['allow', 'Exact'], ['mask', r.maskLabel], ['block', 'Block']].map(([v, label]) => (
                           <button key={v} type="button" onClick={() => setOne(r.key, v)} className="px-2 py-1.5" style={d === v ? { background: SDK, color: '#fff' } : { color: SDK }}>{label}</button>
                         ))}
                       </div>
@@ -102,7 +105,7 @@ export default function SdkRequestModal({ onClose }) {
           </div>
         ) : (
           <div className="p-5 flex flex-col gap-4">
-            <p>{APP_NAME} will receive {done.count} of {requests.length} categories. Everything else stays in CycleSafe.</p>
+            <p>{APP_NAME} will receive {done.count} of {requests.length} categories. Everything else stays in {app.name}.</p>
             <div className="flex flex-col gap-2 text-sm">
               {[['lock', 'Encrypted with ECC + ML-KEM hybrid key exchange'], ['draw', 'Signed with ML-DSA'], ['link', 'Recorded in the Proof Chain']].map(([ic, text]) => (
                 <div key={text} className="flex items-center gap-2 p-2.5 rounded-lg" style={{ background: '#eef7f9' }}>

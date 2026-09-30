@@ -21,6 +21,13 @@ const rawApps = [
     ['You can see a list of every company that has received your data'],
     ['Passed its most recent check with no problems'],
   ] },
+  { name: 'FinSafe', checked: '2 days ago', summary: 'Your balance and payment details stay on your phone.', checks: [
+    ['Your balance and transactions are stored only on your phone'],
+    ['Advertising companies never see your spending'],
+    ['Other apps get money details only after you approve each one'],
+    ['Card and PAN numbers are never sent out'],
+    ['Passed its most recent check with no problems'],
+  ] },
   { name: 'MatruCare', checked: '2 days ago', summary: 'Pregnancy records stay private to you and your doctor.', checks: [
     ['Scan reports and test results are locked with a key only you hold'],
     ['Your doctor sees only what you choose to show them'],
@@ -88,6 +95,7 @@ const rawApps = [
 
 // Picks a symbol that shows what a check is about, from its wording. First match wins.
 const iconRules = [
+  [/balance and transactions|money details|card and PAN/i, 'account_balance_wallet'],
   [/internet/i, 'wifi_off'],
   [/sos|alert|panic/i, 'sos'],
   [/scan reports|test results/i, 'lock'],
@@ -133,11 +141,13 @@ export default function VerifiedRegistry() {
     window.setTimeout(() => setChecking(false), 700);
   };
 
-  const badgeRecord = useBadge();
+  const cycleBadge = useBadge('cyclesafe');
+  const finBadge = useBadge('finsafe');
   // A revoked badge shows up here at once.
-  const list = useMemo(() => apps.map(a => (a.name === 'CycleSafe' && badgeRecord.status === 'failed'
+  const revoked = { CycleSafe: cycleBadge.status === 'failed', FinSafe: finBadge.status === 'failed' };
+  const list = useMemo(() => apps.map(a => (revoked[a.name]
     ? { ...a, state: 'untrusted', summary: 'Failed its latest independent test, and its badge was revoked.' }
-    : a)), [badgeRecord.status]);
+    : a)), [revoked.CycleSafe, revoked.FinSafe]);
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     return q ? list.filter(a => a.name.toLowerCase().includes(q)) : list;
@@ -208,7 +218,7 @@ export default function VerifiedRegistry() {
                     <div>
                       <h2 className="text-t-card text-on-surface">{app.name}</h2>
                       <p className="text-t-caption text-on-surface-variant">Last audited {app.checked}</p>
-                      {app.name === 'CycleSafe' && <a href="/badge/cyclesafe" target="_blank" rel="noopener" className="text-t-caption text-primary underline underline-offset-4">Check live</a>}
+                      {(app.name === 'CycleSafe' || app.name === 'FinSafe') && <a href={`/badge/${app.name.toLowerCase()}`} target="_blank" rel="noopener" className="text-t-caption text-primary underline underline-offset-4">Check live</a>}
                     </div>
                     <div className={`inline-flex items-center gap-space-xs px-space-md py-space-xs rounded-full border ${tone}`}>
                       <span className="material-symbols-outlined text-base" aria-hidden="true">{icon}</span>

@@ -1,7 +1,7 @@
 const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 const pick = list => list[Math.floor(Math.random() * list.length)];
 
-export const destinations = ['Facebook Graph API', 'Google Analytics 4', 'AppsFlyer Attribution', 'Own Health Vault', 'Firebase Crashlytics', 'Unrecognised host', 'ads.sampleads.io', 'HealthPlus'];
+export const destinations = ['Facebook Graph API', 'Google Analytics 4', 'AppsFlyer Attribution', 'Own Health Vault', 'Firebase Crashlytics', 'Unrecognised host', 'ads.sampleads.io', 'HealthPlus', 'Own Money Vault', 'QuickBite'];
 export const statuses = ['Blocked', 'Masked', 'Allowed', 'Encrypted', 'Leaked'];
 
 // [destination, event, status when shield is on, weight]

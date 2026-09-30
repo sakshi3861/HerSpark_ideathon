@@ -1,4 +1,6 @@
 import React, { useMemo } from 'react';
+import { useParams } from 'react-router-dom';
+import { APPS } from '../data/apps';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import useTitle from '../hooks/useTitle';
@@ -7,14 +9,17 @@ import { passBadge, proofOf, revokeBadge, useBadge } from '../state/badge';
 // The live check behind the SurakshaShield badge. The proof is recomputed every time this page opens,
 // so a screenshot of an old badge cannot pass for a current one.
 export default function BadgeCheck() {
-  useTitle('CycleSafe Badge Check');
-  const badge = useBadge();
+  const { app: appId } = useParams();
+  const id = APPS[appId] ? appId : 'cyclesafe';
+  const appName = APPS[id].name;
+  useTitle(`${appName} Badge Check`);
+  const badge = useBadge(id);
   const ok = badge.status === 'passed';
-  const proofMatches = useMemo(() => proofOf(badge.build, badge.testedAt) === badge.proof, [badge]);
+  const proofMatches = useMemo(() => proofOf(badge.build, badge.testedAt, id) === badge.proof, [badge]);
   const checkedAt = useMemo(() => new Date().toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' }), [badge]);
 
   const rows = [
-    ['App', 'CycleSafe'],
+    ['App', appName],
     ['Build', badge.build],
     ['Last independent test', badge.testedAt],
     ['Result', ok ? 'Passed' : 'Failed'],
@@ -34,7 +39,7 @@ export default function BadgeCheck() {
           <div className="w-full max-w-2xl mx-auto flex flex-col gap-space-lg">
             <div>
               <h1 className="page-title">SurakshaShield badge</h1>
-              <p className="page-sub">This page checks CycleSafe&apos;s badge live, every time you open it.</p>
+              <p className="page-sub">This page checks {appName}&apos;s badge live, every time you open it.</p>
             </div>
 
             <div className={`card-bordered flex items-center gap-space-md ${ok ? 'border-secondary/40' : 'border-error/50 bg-error-container/30'}`}>
@@ -43,7 +48,7 @@ export default function BadgeCheck() {
               </div>
               <div>
                 <div className="text-t-title">{ok ? 'Badge is valid' : 'Badge revoked'}</div>
-                <p className="text-t-body text-on-surface-variant">{ok ? 'CycleSafe passed its latest independent test.' : badge.reason}</p>
+                <p className="text-t-body text-on-surface-variant">{ok ? `${appName} passed its latest independent test.` : badge.reason}</p>
               </div>
             </div>
 
@@ -72,10 +77,10 @@ export default function BadgeCheck() {
 
             <div className="card-bordered flex flex-col gap-space-sm">
               <h2 className="text-t-section">Auditor controls</h2>
-              <p className="text-t-body text-on-surface-variant">Our auditors run these after each independent test. A revoked badge shows here, on the Trusted Apps page and inside CycleSafe.</p>
+              <p className="text-t-body text-on-surface-variant">Our auditors run these after each independent test. A revoked badge shows here, on the Trusted Apps page and inside {appName}.</p>
               <div className="flex flex-col sm:flex-row gap-space-sm">
-                <button type="button" onClick={passBadge} className="btn-secondary">Record a passed test</button>
-                <button type="button" onClick={revokeBadge} className="btn-secondary text-error">Revoke the badge</button>
+                <button type="button" onClick={() => passBadge(id)} className="btn-secondary">Record a passed test</button>
+                <button type="button" onClick={() => revokeBadge(id)} className="btn-secondary text-error">Revoke the badge</button>
               </div>
             </div>
           </div>

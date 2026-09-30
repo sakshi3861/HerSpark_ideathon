@@ -10,6 +10,7 @@ import { buildKpis, useMetrics } from '../data/metrics';
 
 const areas = [
   { to: '/cyclesafe/home', newTab: true, icon: 'vital_signs', title: 'CycleSafe Demo', body: 'Watch SurakshaShield protect a real period tracking app' },
+  { to: '/finsafe/home', newTab: true, icon: 'account_balance_wallet', title: 'FinSafe Demo', body: 'Watch SurakshaShield protect a real money and UPI app' },
   { to: '/console', icon: 'terminal', title: 'Live Monitor', body: 'See what data is moving, spot threats, and review the record of what happened' },
   { to: '/registry', icon: 'verified_user', title: 'Trusted Apps', body: 'Check if an app has been certified as privacy safe' },
 ];
@@ -49,7 +50,7 @@ export default function SurakshaShieldOverview() {
 
           <section className="flex flex-col gap-space-md">
             <h2 className="text-t-section text-on-surface">Workspace</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-space-lg">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-lg">
               {areas.map(area => (
                 <Link key={area.to} to={area.to} {...(area.newTab ? { target: '_blank', rel: 'noopener' } : {})} className="card card-hover flex flex-col gap-space-md h-full group hover:ring-1 hover:ring-primary/30">
                   <div className="flex items-center justify-between">

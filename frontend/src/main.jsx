@@ -8,8 +8,8 @@ import VerifiedRegistry from './pages/VerifiedRegistry.jsx';
 import Landing from './pages/Landing.jsx';
 import SurakshaShieldOverview from './pages/SurakshaShieldOverview.jsx';
 import NotFound from './pages/NotFound.jsx';
-import CycleSafeHomeDashboard from './pages/CycleSafeHomeDashboard.jsx';
-import HealthAppDashboard from './pages/HealthAppDashboard.jsx';
+import SafeAppDashboard from './pages/SafeAppDashboard.jsx';
+import PartnerAppDashboard from './pages/PartnerAppDashboard.jsx';
 import BadgeCheck from './pages/BadgeCheck.jsx';
 import './styles.css';
 
@@ -20,9 +20,12 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/home" element={<SurakshaShieldOverview />} />
         <Route path="/cyclesafe" element={<Navigate to="/cyclesafe/home" replace />} />
-        <Route path="/badge/cyclesafe" element={<BadgeCheck />} />
-        <Route path="/cyclesafe/home" element={<CycleSafeHomeDashboard />} />
-        <Route path="/healthapp" element={<HealthAppDashboard />} />
+        <Route path="/badge/:app" element={<BadgeCheck />} />
+        <Route path="/cyclesafe/home" element={<SafeAppDashboard appId="cyclesafe" />} />
+        <Route path="/finsafe" element={<Navigate to="/finsafe/home" replace />} />
+        <Route path="/finsafe/home" element={<SafeAppDashboard appId="finsafe" />} />
+        <Route path="/healthapp" element={<PartnerAppDashboard appId="cyclesafe" />} />
+        <Route path="/foodapp" element={<PartnerAppDashboard appId="finsafe" />} />
         <Route path="/console" element={<ConsoleOverview />} />
         <Route path="/console/live-traffic" element={<ConsoleLiveTraffic />} />
         <Route path="/console/audit-ledger" element={<ConsoleAuditLedger />} />
